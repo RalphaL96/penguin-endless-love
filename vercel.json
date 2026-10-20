@@ -1,9 +1,7 @@
 {
   "headers": [
-    { "source": "/models/(.*)\\.glb", "headers": [
+    { "source": "/(.*)\\.glb", "headers": [
       { "key": "Content-Type", "value": "model/gltf-binary" },
-      { "key": "Cache-Control", "value": "public, max-age=604800" } ] },
-    { "source": "/img/(.*)", "headers": [
       { "key": "Cache-Control", "value": "public, max-age=604800" } ] }
   ]
 }

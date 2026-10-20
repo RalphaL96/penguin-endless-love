@@ -22,15 +22,15 @@ export const FINISHES = {
 // The hosted preview cannot serve .glb, so it sets window.PEL_MODEL_EXT = '.gltf.json'.
 const EXT = window.PEL_MODEL_EXT || '.glb';
 export const MODELS = {
-  stand: { url: `models/penguin-standing${EXT}`, yaw: 0 },
-  rest:  { url: `models/penguin-rest${EXT}`, yaw: Math.PI / 2 },
-  heart: { url: `models/heart${EXT}`, yaw: 0, crease: Math.PI / 5 },
-  standLo: { url: `models/penguin-standing-lo${EXT}`, yaw: 0 },
-  restLo: { url: `models/penguin-rest-lo${EXT}`, yaw: 0 },
+  stand: { url: `penguin-standing${EXT}`, yaw: 0 },
+  rest:  { url: `penguin-rest${EXT}`, yaw: Math.PI / 2 },
+  heart: { url: `heart${EXT}`, yaw: 0, crease: Math.PI / 5 },
+  standLo: { url: `penguin-standing-lo${EXT}`, yaw: 0 },
+  restLo: { url: `penguin-rest-lo${EXT}`, yaw: 0 },
   // rigged standing penguin with 8 clips: Idle, Walk, Wave, Look, Sleep, Lean, Hop, Slide
-  standRig: { url: `models/penguin-standing-rig${EXT}` },
+  standRig: { url: `penguin-standing-rig${EXT}` },
   // rigged reclining penguin (Endless Summer), same 8 clip names with lying-down motion
-  restRig: { url: `models/penguin-rest-rig${EXT}` },
+  restRig: { url: `penguin-rest-rig${EXT}` },
 };
 
 // Where the magnetic heart sits: upper centre of the chest, just under the beak.
