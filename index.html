@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Penguin Endless Love</title>
+<meta name="description" content="Penguin Endless Love: esculturas de Gerardo Campos. Una sola forma en cinco tamaños, en el color que elijas.">
+<meta property="og:title" content="Penguin Endless Love · Gerardo Campos">
+<meta property="og:description" content="Una sola forma en cinco tamaños y cinco acabados, en ediciones numeradas y firmadas.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#121b24">
+<link rel="icon" type="image/png" href="img/monogram.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400..700;1,400..600&family=Hanken+Grotesk:wght@300..600&display=swap">
+<link rel="preload" href="models/penguin-standing.glb" as="fetch" crossorigin>
+<link rel="stylesheet" href="css/site.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body data-collection="love">
+<a class="skip" href="#coleccion" data-i18n="col.title">Haz tu promesa</a>
+
+<header class="site-header" id="siteHeader">
+  <a class="brand" href="#top" aria-label="Penguin Endless Love">
+    <img src="img/logo-white.png" alt="Penguin Endless Love" width="86" height="63">
+  </a>
+  <nav class="nav" id="siteNav" aria-label="Principal">
+    <a href="#promesa" data-i18n="nav.promise">La promesa</a>
+    <a href="#coleccion" data-i18n="nav.collection">Colección</a>
+    <a href="#despertar" data-i18n="nav.awaken">Despertar</a>
+    <a href="#artista" data-i18n="nav.artist">El artista</a>
+    <a href="#proceso" data-i18n="nav.process">Cómo se hace</a>
+    <a href="#merch" data-i18n="nav.merch">Merch</a>
+    <a href="summer.html" class="nav-other" id="navOther" data-i18n="nav.other">Endless Summer</a>
+  </nav>
+  <div class="header-actions">
+    <div class="lang" role="group" aria-label="Idioma / Language">
+      <button type="button" data-lang="es" aria-pressed="true">ES</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+    <button type="button" class="btn btn-ghost btn-small js-open-request" data-i18n="nav.cta">Solicitar asesoría</button>
+    <button type="button" class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="siteNav">
+      <span class="sr-only" data-i18n="nav.menu">Menú</span>
+      <span class="bars" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- HERO: the sculpture between the two lines of its name -->
+  <section class="hero" id="top">
+    <h1 class="hero-title">
+      <span class="t1">Penguin</span>
+      <span class="t2" id="heroT2">Endless Love</span>
+    </h1>
+    <canvas class="hero-canvas" id="heroCanvas" aria-label="Escultura Penguin Endless Love en cromo espejo" role="img"></canvas>
+    <div class="hero-foot">
+      <p class="hero-lead" data-i18n="hero.lead">Esculturas de Gerardo Campos. Una sola forma en cinco tamaños y cinco acabados, en ediciones numeradas y firmadas.</p>
+      <div class="hero-actions">
+        <a class="btn btn-solid" href="#coleccion" data-i18n="hero.cta">Haz tu promesa</a>
+        <a class="link" href="#promesa" data-i18n="hero.cta2">Conoce la historia</a>
+        <button type="button" class="btn btn-ghost btn-small motion-btn" id="motionBtn" hidden data-i18n="hero.motion">Mover con el teléfono</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- THE PROMISE: polar day after polar night -->
+  <section class="promise" id="promesa">
+    <div class="sketch sketch-colony" aria-hidden="true"></div>
+    <div class="promise-inner">
+      <h2 class="promise-title" data-i18n="promise.title">Una piedra lisa, elegida entre miles.</h2>
+      <div class="promise-body">
+        <p data-i18n="promise.p1"></p>
+        <p data-i18n="promise.p2"></p>
+      </div>
+      <figure class="promise-quote">
+        <img class="heart-mark" src="img/heart.png" alt="" width="160" height="180">
+        <blockquote><p data-i18n="promise.quote"></p></blockquote>
+        <figcaption>Gerardo Campos</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- CONFIGURATOR -->
+  <section class="collection" id="coleccion">
+    <div class="collection-head">
+      <h2 class="section-title" data-i18n="col.title">Haz tu promesa</h2>
+      <p class="section-intro" data-i18n="col.intro"></p>
+    </div>
+
+    <div class="configurator">
+      <div class="viewer">
+        <div class="viewer-stage">
+          <canvas id="configCanvas" aria-label="Vista 3D de la pieza configurada" role="img"></canvas>
+          <p class="viewer-hint" data-i18n="viewer.drag">Arrastra para girar</p>
+          <button type="button" class="viewer-heart" id="viewerHeart" aria-pressed="false" data-i18n="viewer.heartOn">Ver con el corazón</button>
+        </div>
+        <div class="plinth">
+          <p class="plinth-words" id="plinthWords" aria-live="polite"></p>
+          <p class="plinth-line" id="plinthLine"></p>
+        </div>
+        <figure class="scale">
+          <svg viewBox="0 0 240 120" role="img" aria-labelledby="scaleCaption" class="scale-svg">
+            <line x1="8" y1="110" x2="232" y2="110" class="scale-ground"/>
+            <g class="scale-person">
+              <circle cx="70" cy="22" r="8"/>
+              <path d="M58 34 h24 l5 40 h-7 l-2 36 h-7 l-1-30 h-2 l-1 30 h-7 l-2-36 h-7 z"/>
+            </g>
+            <text x="70" y="10" class="scale-label" id="scalePersonLabel" text-anchor="middle">1,75 m</text>
+            <g id="scalePenguin" class="scale-penguin">
+              <path id="scalePenguinPath" d=""/>
+            </g>
+            <text id="scalePenguinLabel" x="160" y="100" class="scale-label" text-anchor="middle">48 cm</text>
+          </svg>
+          <figcaption id="scaleCaption" data-i18n="scale.caption">Altura frente a una persona de 1,75 m</figcaption>
+        </figure>
+      </div>
+
+      <form class="choices" id="configForm" novalidate>
+        <fieldset class="choice">
+          <legend data-i18n="q.for">¿Para quién es?</legend>
+          <div class="chips" id="forChips">
+            <label><input type="radio" name="for" value="love" checked><span data-i18n="for.love">Mi pareja</span></label>
+            <label><input type="radio" name="for" value="family"><span data-i18n="for.family">Mi familia</span></label>
+            <label><input type="radio" name="for" value="birth"><span data-i18n="for.birth">Un nacimiento</span></label>
+            <label><input type="radio" name="for" value="friend"><span data-i18n="for.friend">Una amistad</span></label>
+            <label><input type="radio" name="for" value="self"><span data-i18n="for.self">Para mí</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="choice">
+          <legend data-i18n="q.size">¿Dónde va a vivir?</legend>
+          <div class="sizes" id="sizeOptions"></div>
+          <p class="help" id="sizeNote" data-i18n="size.note"></p>
+        </fieldset>
+
+        <fieldset class="choice">
+          <legend><span data-i18n="q.finish">¿Qué carácter tendrá?</span> <span class="legend-value" id="finishName"></span></legend>
+          <div class="finishes" id="finishOptions"></div>
+          <p class="finish-line" id="finishLine"></p>
+          <div class="hsv" id="hsvPanel" hidden>
+            <div class="hsv-row">
+              <label for="hsvH" data-i18n="hsv.h">Matiz</label>
+              <input type="range" id="hsvH" min="0" max="360" value="200" class="hsv-range hsv-h">
+            </div>
+            <div class="hsv-row">
+              <label for="hsvS" data-i18n="hsv.s">Saturación</label>
+              <input type="range" id="hsvS" min="0" max="100" value="55" class="hsv-range" data-track="s">
+            </div>
+            <div class="hsv-row">
+              <label for="hsvV" data-i18n="hsv.v">Brillo</label>
+              <input type="range" id="hsvV" min="0" max="100" value="70" class="hsv-range" data-track="v">
+            </div>
+            <p class="hsv-readout"><span class="hsv-chip" id="hsvChip"></span><span id="hsvHex" class="select">#000000</span></p>
+          </div>
+        </fieldset>
+
+        <fieldset class="choice">
+          <legend data-i18n="q.surface">Superficie</legend>
+          <div class="chips">
+            <label><input type="radio" name="surface" value="gloss" checked><span data-i18n="surface.gloss">Brillante</span></label>
+            <label><input type="radio" name="surface" value="matte"><span data-i18n="surface.matte">Mate</span></label>
+          </div>
+        </fieldset>
+
+        <div class="choice">
+          <label class="field-label" for="engraveInput" data-i18n="q.engrave">Palabras para la base</label>
+          <input type="text" id="engraveInput" maxlength="40" autocomplete="off" aria-describedby="engraveHelp">
+          <p class="help" id="engraveHelp" data-i18n="engrave.help">Opcional. Hasta 40 caracteres.</p>
+        </div>
+
+        <p class="material" data-i18n="material"></p>
+
+        <div class="summary">
+          <p class="summary-label" data-i18n="summary.label">Tu pieza</p>
+          <p class="summary-text" id="summaryText"></p>
+          <button type="button" class="btn btn-solid btn-wide js-open-request" data-i18n="col.cta">Solicitar esta pieza</button>
+          <p class="help" data-i18n="col.note"></p>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- AWAKENING (NFC) -->
+  <section class="awaken" id="despertar">
+    <div class="sketch sketch-union" aria-hidden="true"></div>
+    <div class="awaken-visual">
+      <canvas class="awaken-canvas" id="awakenCanvas" aria-label="El corazón dorado uniéndose al pecho del pingüino" role="img"></canvas>
+      <button type="button" class="btn btn-ghost btn-small heart-toggle" id="heartToggle" aria-pressed="false" data-i18n="heart.dock">Unir el corazón</button>
+    </div>
+    <div class="awaken-copy">
+      <h2 class="section-title" data-i18n="awaken.title">Tu pingüino despierta</h2>
+      <p data-i18n="awaken.p1"></p>
+      <p data-i18n="awaken.p2"></p>
+      <ol class="awaken-steps">
+        <li data-i18n="awaken.s1"></li>
+        <li data-i18n="awaken.s2"></li>
+        <li data-i18n="awaken.s3"></li>
+      </ol>
+      <p class="help" data-i18n="awaken.note"></p>
+      <a class="btn btn-ghost btn-small awaken-visit" href="mundo.html" data-i18n="awaken.visit">Visitar la isla</a>
+    </div>
+  </section>
+
+  <!-- ARTIST -->
+  <section class="artist" id="artista">
+    <div class="artist-portrait">
+      <span data-i18n="artist.portrait">Retrato del artista</span>
+    </div>
+    <div class="artist-copy">
+      <p class="artist-kicker">The Artist</p>
+      <h2 class="section-title">Gerardo Campos</h2>
+      <p class="artist-role" data-i18n="artist.role">Artista y diseñador venezolano</p>
+      <p data-i18n="artist.p1"></p>
+      <p data-i18n="artist.p2"></p>
+      <a class="link" href="https://instagram.com/gerardoecampos" target="_blank" rel="noopener">@gerardoecampos</a>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section class="process" id="proceso">
+    <div class="process-head">
+      <h2 class="section-title" data-i18n="process.title">Cómo se hace tu pieza</h2>
+      <p class="section-intro" data-i18n="process.intro"></p>
+    </div>
+    <ol class="steps">
+      <li><h3 data-i18n="step1.t">Solicitud</h3><p data-i18n="step1.d"></p></li>
+      <li><h3 data-i18n="step2.t">Asesoría</h3><p data-i18n="step2.d"></p></li>
+      <li><h3 data-i18n="step3.t">Producción</h3><p data-i18n="step3.d"></p></li>
+      <li><h3 data-i18n="step4.t">Entrega</h3><p data-i18n="step4.d"></p></li>
+    </ol>
+    <div class="process-images">
+      <figure><img src="img/packaging.webp" alt="" loading="lazy" width="1400" height="933"><figcaption data-i18n="img.box">Caja a medida</figcaption></figure>
+      <figure><img src="img/certificate.webp" alt="" loading="lazy" width="1400" height="933"><figcaption data-i18n="img.cert">Certificado de autenticidad</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <!-- MERCH -->
+  <section class="merch" id="merch">
+    <div class="merch-head">
+      <h2 class="section-title" data-i18n="merch.title">Merch</h2>
+      <p class="section-intro" data-i18n="merch.intro"></p>
+    </div>
+    <ul class="merch-grid">
+      <li class="merch-item">
+        <div class="merch-visual" aria-hidden="true">
+          <svg viewBox="0 0 200 200"><path class="mv-fill" d="M70 38 L52 44 L24 66 L40 92 L56 82 L56 168 L144 168 L144 82 L160 92 L176 66 L148 44 L130 38 C126 52 114 60 100 60 C86 60 74 52 70 38 Z"/></svg>
+          <img src="img/logo-white.png" alt="" class="mv-mark mv-mark-tee">
+        </div>
+        <h3 data-i18n="merch.tee">Camiseta Endless Love</h3>
+        <p data-i18n="merch.tee.d"></p>
+        <button type="button" class="btn btn-ghost btn-small js-merch" data-item="tee" data-i18n="merch.cta">Reservar</button>
+      </li>
+      <li class="merch-item">
+        <div class="merch-visual" aria-hidden="true">
+          <svg viewBox="0 0 200 200"><path class="mv-line" d="M78 70 C78 34 122 34 122 70" fill="none"/><path class="mv-fill" d="M48 70 L152 70 L160 176 L40 176 Z"/></svg>
+          <img src="img/logo-white.png" alt="" class="mv-mark mv-mark-tote">
+        </div>
+        <h3 data-i18n="merch.tote">Tote</h3>
+        <p data-i18n="merch.tote.d"></p>
+        <button type="button" class="btn btn-ghost btn-small js-merch" data-item="tote" data-i18n="merch.cta">Reservar</button>
+      </li>
+      <li class="merch-item">
+        <div class="merch-visual" aria-hidden="true">
+          <svg viewBox="0 0 200 200"><path class="mv-fill" d="M44 120 C44 70 70 50 100 50 C130 50 156 70 156 120 Z"/><path class="mv-fill mv-brim" d="M40 118 L176 118 C184 118 186 132 176 134 L40 134 C34 134 34 118 40 118 Z"/></svg>
+          <img src="img/logo-white.png" alt="" class="mv-mark mv-mark-cap">
+        </div>
+        <h3 data-i18n="merch.cap">Gorra</h3>
+        <p data-i18n="merch.cap.d"></p>
+        <button type="button" class="btn btn-ghost btn-small js-merch" data-item="cap" data-i18n="merch.cta">Reservar</button>
+      </li>
+      <li class="merch-item">
+        <div class="merch-visual merch-visual-pin" aria-hidden="true">
+          <img src="img/heart.png" alt="" class="mv-heart">
+        </div>
+        <h3 data-i18n="merch.pin">Pin del corazón</h3>
+        <p data-i18n="merch.pin.d"></p>
+        <button type="button" class="btn btn-ghost btn-small js-merch" data-item="pin" data-i18n="merch.cta">Reservar</button>
+      </li>
+    </ul>
+  </section>
+
+  <section class="faq" id="preguntas">
+    <h2 class="section-title" data-i18n="faq.title">Preguntas frecuentes</h2>
+    <div class="faq-list">
+      <details><summary data-i18n="faq1.q"></summary><p data-i18n="faq1.a"></p></details>
+      <details><summary data-i18n="faq2.q"></summary><p data-i18n="faq2.a"></p></details>
+      <details><summary data-i18n="faq3.q"></summary><p data-i18n="faq3.a"></p></details>
+      <details><summary data-i18n="faq4.q"></summary><p data-i18n="faq4.a"></p></details>
+      <details><summary data-i18n="faq6.q"></summary><p data-i18n="faq6.a"></p></details>
+      <details><summary data-i18n="faq5.q"></summary><p data-i18n="faq5.a"></p></details>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <img src="img/logo-white.png" alt="Penguin Endless Love" width="86" height="63" loading="lazy">
+  <p data-i18n="footer.line"></p>
+  <p><span data-i18n="footer.contact">Contacto</span>: <span class="select">gerardocampos.estudio@gmail.com</span></p>
+  <p><a class="link" href="https://instagram.com/gerardoecampos" target="_blank" rel="noopener">Instagram</a></p>
+  <p class="fine" data-i18n="footer.rights">© 2026 Gerardo Campos Estudio</p>
+</footer>
+
+<!-- REQUEST DIALOG -->
+<dialog class="request" id="requestDialog" aria-labelledby="requestTitle">
+  <button type="button" class="dialog-close" id="dialogClose"><span class="sr-only" data-i18n="form.close">Cerrar</span><span aria-hidden="true">×</span></button>
+  <div id="requestFormWrap">
+    <h2 id="requestTitle" data-i18n="form.title">Solicitar esta pieza</h2>
+    <p class="help" data-i18n="form.intro"></p>
+    <div class="request-piece">
+      <p class="summary-label" data-i18n="form.piece">Pieza elegida</p>
+      <p id="requestPiece"></p>
+      <p class="request-engrave" id="requestEngrave"></p>
+    </div>
+    <form id="requestForm" novalidate>
+      <div class="field">
+        <label for="fName" data-i18n="form.name">Nombre y apellido</label>
+        <input id="fName" name="name" type="text" autocomplete="name" required>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="fEmail" data-i18n="form.email">Correo electrónico</label>
+          <input id="fEmail" name="email" type="email" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="fPhone" data-i18n="form.phone">Teléfono o WhatsApp</label>
+          <input id="fPhone" name="phone" type="tel" autocomplete="tel" required>
+        </div>
+      </div>
+      <div class="field">
+        <label for="fLocation" data-i18n="form.location">Ciudad y país</label>
+        <input id="fLocation" name="location" type="text" autocomplete="address-level2" required>
+      </div>
+      <label class="check"><input id="fGift" type="checkbox" name="gift"><span data-i18n="form.gift">Es un regalo</span></label>
+      <div class="field">
+        <label for="fMessage"><span data-i18n="form.message">Algo más que debamos saber</span> <span class="optional" data-i18n="form.optional">Opcional</span></label>
+        <textarea id="fMessage" name="message" rows="3"></textarea>
+      </div>
+      <input type="text" name="_honey" id="fHoney" class="honey" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <label class="check"><input id="fConsent" type="checkbox" required><span data-i18n="form.consent"></span></label>
+      <p class="form-error" id="formError" role="alert" hidden></p>
+      <button type="submit" class="btn btn-solid btn-wide" id="submitBtn" data-i18n="form.submit">Enviar solicitud</button>
+    </form>
+  </div>
+  <div class="request-success" id="requestSuccess" hidden>
+    <img class="heart-mark" src="img/heart.png" alt="" width="160" height="180">
+    <h2 data-i18n="form.successTitle">Solicitud enviada</h2>
+    <p id="successBody"></p>
+    <button type="button" class="btn btn-ghost" id="successClose" data-i18n="form.close">Cerrar</button>
+  </div>
+</dialog>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+/* Living certificate and the island. Builds on the tokens in site.css. */
+.eco-header { position: sticky; }
+.eco-header .header-actions { gap: 20px; }
+
+/* ---------- certificate ---------- */
+.cert {
+  max-width: 680px; margin: 0 auto;
+  padding: 24px var(--gutter) calc(env(safe-area-inset-bottom, 0px) + 80px);
+  display: grid; gap: 40px; justify-items: center; text-align: center;
+}
+.cert-heart { width: 170px; height: 190px; }
+.cert-heart canvas { width: 100%; height: 100%; display: block; }
+.cert-state, .cert-doc, .pen { width: 100%; display: grid; gap: 14px; justify-items: center; }
+.cert-status { font-size: var(--step-3); display: inline-flex; align-items: center; gap: .4em; }
+.cert-help { color: var(--mist); max-width: 46ch; }
+.cert-kicker { color: var(--stone); font-size: var(--step--1); letter-spacing: .04em; }
+.cert-check {
+  width: .7em; height: .7em; border-radius: 50%; background: var(--stone); position: relative; flex: none;
+}
+.cert-check::after {
+  content: ""; position: absolute; left: 32%; top: 18%; width: 28%; height: 48%;
+  border: solid var(--night); border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
+.cert-doc {
+  padding: clamp(28px, 6vw, 48px); border: 1px solid var(--ice-line); border-radius: 4px;
+  background: linear-gradient(180deg, var(--night-2), var(--night));
+  position: relative;
+}
+.cert-doc::before { /* inner rule, like an engraved certificate border */
+  content: ""; position: absolute; inset: 8px; border: 1px solid var(--ice-line); border-radius: 2px; pointer-events: none; opacity: .6;
+}
+.cert-serial { font-family: var(--display); font-size: clamp(2.4rem, 9vw, 3.6rem); letter-spacing: .04em; font-variant-numeric: lining-nums tabular-nums; line-height: 1; margin: 6px 0 10px; }
+.cert-grid { width: 100%; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; text-align: left; border-top: 1px solid var(--ice-line); }
+.cert-grid div { padding: 14px 4px; border-bottom: 1px solid var(--ice-line); display: grid; gap: 2px; min-width: 0; }
+.cert-grid div:nth-child(odd) { padding-right: 16px; }
+.cert-grid dt { color: var(--mist); font-size: var(--step--1); }
+.cert-grid dd { margin: 0; font-size: var(--step-0); overflow-wrap: anywhere; }
+.cert-sign { font-family: var(--display); font-style: italic; color: var(--mist); margin-top: 8px; }
+@media (max-width: 460px) { .cert-grid { grid-template-columns: minmax(0, 1fr); } .cert-grid div:nth-child(odd) { padding-right: 4px; } }
+
+.pen-name, .pen-title { font-size: var(--step-3); }
+.pen-meta { color: var(--mist); }
+#claimForm { width: 100%; display: grid; gap: 22px; text-align: left; margin-top: 10px; }
+.field label, .personalities legend { font-size: var(--step--1); color: var(--mist); }
+.field input { width: 100%; background: var(--night-2); border: 1px solid var(--ice-line); color: var(--frost); font: 400 var(--step-0)/1.4 var(--body); padding: .85em 1em; border-radius: 14px; }
+.field input:focus { border-color: var(--mist); outline: none; }
+#penName { font-family: var(--display); font-size: var(--step-2); }
+.personalities { border: 0; padding: 0; margin: 0; }
+.personalities legend { margin-bottom: 10px; padding: 0; }
+.p-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 560px) { .p-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.p-card { position: relative; cursor: pointer; }
+.p-card input { position: absolute; opacity: 0; }
+.p-body { display: grid; gap: 4px; padding: 14px; height: 100%; border: 1px solid var(--ice-line); border-radius: 14px; transition: border-color .2s, background-color .2s; }
+.p-name { font-family: var(--display); font-size: var(--step-1); color: var(--frost); }
+.p-desc { font-size: .8125rem; color: var(--mist); line-height: 1.45; }
+.p-card:hover .p-body { border-color: var(--mist); }
+.p-card input:checked + .p-body { border-color: var(--stone); background: var(--night-2); }
+.p-card input:checked + .p-body .p-name { color: var(--stone); }
+.p-card input:focus-visible + .p-body { outline: 2px solid var(--stone); outline-offset: 2px; }
+
+.demo-note { font-size: var(--step--1); color: var(--mist); display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: center; border-top: 1px dashed var(--ice-line); padding-top: 20px; }
+.demo-note a { color: var(--stone); }
+
+/* ---------- the island ---------- */
+.world-page { height: 100svh; overflow: hidden; background: var(--night); }
+.world {
+  position: fixed; inset: 0;
+  background: linear-gradient(180deg, #3b5065 0%, #8fa6b6 46%, #d9c7b0 62%, #2b3b49 62.2%, #1b2833 100%);
+}
+body[data-collection="summer"] .world { background: linear-gradient(180deg, #4a3226 0%, #c58b62 46%, #f0c793 62%, #3a2a24 62.2%, #251a17 100%); }
+.world canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+.world canvas:active { cursor: grabbing; }
+.world-ui { position: absolute; inset: 0; pointer-events: none; }
+.world-ui > * { pointer-events: auto; }
+.world-top {
+  position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) var(--gutter) 14px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--night) 70%, transparent), transparent);
+}
+.world-top .brand img { width: 64px; }
+.world-title { font-family: var(--display); font-size: var(--step-1); }
+.world-count { color: var(--mist); font-size: var(--step--1); }
+.world-heading { display: grid; justify-items: center; text-align: center; }
+.world-actions { display: flex; gap: 10px; align-items: center; }
+.world-bottom { position: absolute; left: 0; right: 0; bottom: 0; padding: 16px var(--gutter) calc(env(safe-area-inset-bottom, 0px) + 18px); display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; pointer-events: none; }
+.world-bottom > * { pointer-events: auto; }
+.world-hint { color: var(--frost); font-size: var(--step--1); pointer-events: none !important; padding: .55em 1em; border-radius: 999px; background: color-mix(in srgb, var(--night) 60%, transparent); backdrop-filter: blur(6px); }
+.world-actions .btn-ghost { background: color-mix(in srgb, var(--night) 72%, transparent); backdrop-filter: blur(6px); }
+@media (max-width: 640px) { .world-hint { display: none; } }
+.world-loading { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: var(--step-2); color: var(--frost); background: var(--night); transition: opacity .8s; }
+.world-loading.done { opacity: 0; pointer-events: none; }
+.world-loading::before {
+  content: ""; position: absolute; inset: 8%; background-color: var(--frost); opacity: .09; z-index: -1;
+  -webkit-mask: url(../img/sketch-colony.webp) center / contain no-repeat; mask: url(../img/sketch-colony.webp) center / contain no-repeat;
+}
+.world-loading { isolation: isolate; }
+
+.tag {
+  position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); white-space: nowrap;
+  font: 500 .75rem/1 var(--body); color: var(--frost); padding: .45em .8em; border-radius: 999px;
+  background: color-mix(in srgb, var(--night) 72%, transparent); backdrop-filter: blur(6px);
+  border: 1px solid transparent; cursor: pointer; transition: opacity .25s;
+}
+.tag.mine { border-color: var(--stone); color: var(--stone); font-weight: 600; }
+.tag.dim { opacity: 0; pointer-events: none; }
+
+.pcard {
+  width: min(360px, 100%); padding: 20px 22px; border-radius: 22px;
+  background: color-mix(in srgb, var(--night) 86%, transparent); backdrop-filter: blur(12px);
+  border: 1px solid var(--ice-line); display: grid; gap: 6px; position: relative;
+}
+.pcard-name { font-family: var(--display); font-size: var(--step-2); line-height: 1.1; padding-right: 36px; }
+.pcard-p { color: var(--stone); font-size: var(--step--1); }
+.pcard-act { font-size: var(--step-0); }
+.pcard-meta { color: var(--mist); font-size: .8125rem; }
+.pcard-actions { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.pcard .dialog-close { top: 14px; right: 14px; width: 34px; height: 34px; font-size: 1.1rem; }
+
+/* ---------- chip page: baptism + certificate ---------- */
+.chip-page .demo-note { max-width: 1280px; margin: 0 auto 40px; padding-inline: var(--gutter); }
+.chip {
+  max-width: 1280px; margin: 0 auto; padding: 24px var(--gutter) 64px;
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(28px, 5vw, 72px); align-items: start;
+}
+.chip-stage {
+  position: sticky; top: 96px; aspect-ratio: 4 / 5; max-height: 78vh; width: 100%; border-radius: 28px; overflow: hidden;
+  background: radial-gradient(65% 60% at 50% 45%, var(--stage-glow) 0%, var(--night-2) 60%, var(--night) 100%);
+}
+.chip-stage canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: pan-y; }
+.chip-stage-name { position: absolute; left: 22px; bottom: 14px; text-align: left; font-family: var(--display); font-weight: 600; font-size: var(--step-2); letter-spacing: -.02em; pointer-events: none; }
+.chip-panel { display: grid; gap: 36px; min-width: 0; }
+.bap { display: grid; gap: 36px; }
+.bap-head { display: grid; gap: 12px; }
+.bap-head .cert-kicker { display: inline-flex; align-items: center; gap: .5em; }
+.bap-title { font-size: var(--step-3); font-weight: 600; letter-spacing: -.03em; }
+.bap-step { border: 0; margin: 0; padding: 0; display: grid; gap: 14px; min-width: 0; }
+.bap-step legend { font-family: var(--display); font-weight: 600; font-size: var(--step-1); letter-spacing: -.02em; padding: 0; margin-bottom: 14px; display: flex; align-items: baseline; gap: .5em; flex-wrap: wrap; }
+.bap-n { color: var(--stone); font-variant-numeric: tabular-nums; }
+.bap-step input[type="radio"] { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.coll-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.coll { cursor: pointer; position: relative; }
+.coll-body { display: grid; gap: 4px; padding: 16px; border: 1px solid var(--ice-line); border-radius: 16px; height: 100%; transition: border-color .2s, background-color .2s; }
+.coll-name { font-family: var(--display); font-weight: 600; font-size: var(--step-0); }
+.coll-desc { color: var(--mist); font-size: var(--step--1); }
+.coll:hover .coll-body { border-color: var(--mist); }
+.coll input:checked + .coll-body { border-color: var(--stone); background: var(--night-2); }
+.coll input:focus-visible + .coll-body { outline: 2px solid var(--stone); outline-offset: 2px; }
+button.p-card { all: unset; box-sizing: border-box; cursor: pointer; display: block; position: relative; }
+button.p-card:focus-visible .p-body { outline: 2px solid var(--stone); outline-offset: 2px; }
+button.p-card:hover .p-body { border-color: var(--mist); }
+button.p-card.main .p-body { border-color: var(--stone); background: var(--night-2); }
+button.p-card.main .p-name { color: var(--stone); }
+button.p-card.trait .p-body { border-color: var(--mist); border-style: dashed; }
+.p-role { font-size: .75rem; color: var(--stone); min-height: 1em; }
+.certificate { display: grid; gap: 18px; }
+.certificate .cert-doc { text-align: center; display: grid; gap: 6px; justify-items: center; }
+.cert-doc-title { color: var(--mist); font-size: var(--step--1); letter-spacing: .06em; }
+.cert-name { font-size: var(--step-3); font-weight: 600; letter-spacing: -.03em; margin-top: 6px; }
+.certificate .cert-serial { font-weight: 600; margin: 2px 0 0; white-space: nowrap; font-size: clamp(2rem, 4.2vw, 3.2rem); }
+.certificate .cert-doc { width: 100%; }
+.cert-arrival { color: var(--stone); font-size: var(--step--1); margin-bottom: 12px; }
+.cert-swatch { display: inline-block; width: .85em; height: .85em; border-radius: 50%; margin-right: .45em; vertical-align: -.08em; outline: 1px solid var(--ice-line); outline-offset: 2px; }
+@media (max-width: 900px) {
+  .chip { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 12px; }
+  .chip-stage { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 72px); z-index: 5; aspect-ratio: auto; height: 40svh; min-height: 260px; box-shadow: 0 18px 30px -18px rgba(0, 0, 0, .8); }
+  .chip-stage-name { left: 16px; bottom: 10px; font-size: var(--step-1); }
+}

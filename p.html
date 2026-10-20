@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tu pingüino · Penguin Endless Love</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#121b24">
+<link rel="icon" type="image/png" href="img/monogram.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400..700;1,400..600&family=Hanken+Grotesk:wght@300..600&display=swap">
+<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/eco.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body data-collection="love" class="eco-page chip-page">
+<header class="site-header scrolled eco-header">
+  <a class="brand" href="index.html" aria-label="Penguin Endless Love"><img src="img/logo-white.png" alt="Penguin Endless Love" width="86" height="63"></a>
+  <div class="header-actions">
+    <a class="link" href="mundo.html" data-i18n="world.title">La isla</a>
+    <div class="lang" role="group" aria-label="Idioma / Language">
+      <button type="button" data-lang="es" aria-pressed="true">ES</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </div>
+</header>
+
+<!-- 1. Verifying the tap -->
+<main class="cert" id="stateVerifying" aria-live="polite">
+  <div class="cert-heart" aria-hidden="true"><canvas id="certHeart"></canvas></div>
+  <h1 class="cert-status" data-i18n="cert.verifying">Verificando la firma del corazón…</h1>
+  <p class="cert-help" data-i18n="cert.verifyingHelp"></p>
+</main>
+
+<!-- 2. Tap could not be verified -->
+<main class="cert" id="stateFail" hidden>
+  <h1 class="cert-status" id="failTitle"></h1>
+  <p class="cert-help" id="failHelp"></p>
+</main>
+
+<!-- 3. The penguin: baptism for a new heart, certificate for a baptised one -->
+<main class="chip" id="stateChip" hidden>
+  <div class="chip-stage">
+    <canvas id="chipCanvas" aria-label="Tu pingüino en 3D" role="img"></canvas>
+    <p class="chip-stage-name" id="stageName" aria-live="polite"></p>
+    <p class="viewer-hint" data-i18n="viewer.drag">Arrastra para girar</p>
+  </div>
+
+  <div class="chip-panel">
+    <!-- baptism -->
+    <form class="bap" id="bapForm" novalidate hidden>
+      <header class="bap-head">
+        <p class="cert-kicker"><span class="cert-check" aria-hidden="true"></span> <span data-i18n="bap.kicker">Corazón auténtico</span></p>
+        <h1 class="bap-title" data-i18n="bap.title">Tu pingüino está por despertar</h1>
+        <p class="cert-help" data-i18n="bap.intro"></p>
+      </header>
+
+      <fieldset class="bap-step">
+        <legend><span class="bap-n">1</span> <span data-i18n="bap.collection">¿Cuál es tu pingüino?</span></legend>
+        <div class="coll-grid">
+          <label class="coll"><input type="radio" name="collection" value="love" checked><span class="coll-body"><span class="coll-name">Penguin Endless Love</span><span class="coll-desc" data-i18n="bap.love.d">De pie</span></span></label>
+          <label class="coll"><input type="radio" name="collection" value="summer"><span class="coll-body"><span class="coll-name">Penguin Endless Summer</span><span class="coll-desc" data-i18n="bap.summer.d">En reposo</span></span></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="bap-step">
+        <legend><span class="bap-n">2</span> <span data-i18n="bap.color">Su color</span> <span class="legend-value" id="colorName"></span></legend>
+        <div class="finishes" id="colorOptions"></div>
+        <div class="hsv" id="hsvPanel" hidden>
+          <div class="hsv-row"><label for="hsvH" data-i18n="hsv.h">Matiz</label><input type="range" id="hsvH" min="0" max="360" value="200" class="hsv-range hsv-h"></div>
+          <div class="hsv-row"><label for="hsvS" data-i18n="hsv.s">Saturación</label><input type="range" id="hsvS" min="0" max="100" value="55" class="hsv-range"></div>
+          <div class="hsv-row"><label for="hsvV" data-i18n="hsv.v">Brillo</label><input type="range" id="hsvV" min="0" max="100" value="70" class="hsv-range"></div>
+          <p class="hsv-readout"><span class="hsv-chip" id="hsvChip"></span><span id="hsvHex" class="select"></span></p>
+        </div>
+      </fieldset>
+
+      <fieldset class="bap-step">
+        <legend><span class="bap-n">3</span> <span data-i18n="bap.surface">Su acabado</span></legend>
+        <div class="chips">
+          <label><input type="radio" name="surface" value="gloss" checked><span data-i18n="surface.gloss">Brillante</span></label>
+          <label><input type="radio" name="surface" value="matte"><span data-i18n="surface.matte">Mate</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="bap-step">
+        <legend><span class="bap-n">4</span> <span data-i18n="bap.personality">Su carácter</span></legend>
+        <p class="help" data-i18n="bap.personalityHelp"></p>
+        <div class="p-grid" id="pGrid"></div>
+      </fieldset>
+
+      <fieldset class="bap-step">
+        <legend><span class="bap-n">5</span> <span data-i18n="bap.name">Su nombre</span></legend>
+        <div class="field">
+          <label for="penName" class="sr-only" data-i18n="bap.name"></label>
+          <input id="penName" type="text" maxlength="24" autocomplete="off" required>
+        </div>
+        <div class="field">
+          <label for="penEmail" data-i18n="pen.email">Tu correo</label>
+          <input id="penEmail" type="email" autocomplete="email" required>
+          <p class="help" data-i18n="pen.emailHelp"></p>
+        </div>
+      </fieldset>
+
+      <p class="form-error" id="bapError" role="alert" hidden></p>
+      <button type="submit" class="btn btn-solid btn-wide" id="bapBtn"></button>
+    </form>
+
+    <!-- certificate (generated on baptism, or shown on later taps) -->
+    <section class="certificate" id="certView" hidden aria-live="polite">
+      <p class="cert-kicker" id="certKicker"></p>
+      <article class="cert-doc">
+        <p class="cert-doc-title" data-i18n="cert.docTitle">Certificado de autenticidad</p>
+        <h2 class="cert-name" id="cName"></h2>
+        <p class="cert-serial" id="cSerial"></p>
+        <p class="cert-arrival" id="cArrival"></p>
+        <dl class="cert-grid">
+          <div><dt data-i18n="cert.collection"></dt><dd id="cCollection"></dd></div>
+          <div><dt data-i18n="bap.color"></dt><dd><span class="cert-swatch" id="cSwatch"></span><span id="cColor"></span></dd></div>
+          <div><dt data-i18n="bap.surface"></dt><dd id="cSurface"></dd></div>
+          <div><dt data-i18n="bap.personality"></dt><dd id="cPersonality"></dd></div>
+          <div><dt data-i18n="cert.awake"></dt><dd id="cAwake"></dd></div>
+          <div><dt data-i18n="cert.reads"></dt><dd id="cReads"></dd></div>
+        </dl>
+        <p class="cert-sign" data-i18n="cert.sign"></p>
+      </article>
+      <a class="btn btn-solid btn-wide" id="visitBtn" href="mundo.html"></a>
+      <p class="help" id="emailNote"></p>
+    </section>
+  </div>
+</main>
+
+<aside class="demo-note" id="demoNote" hidden>
+  <span data-i18n="demo.note"></span>
+  <a href="#nuevo" data-i18n="demo.new">Corazón nuevo</a>
+  <a href="#PEL-0001">PEL-0001 (Luna)</a>
+  <a href="#PES-0005">PES-0005 (Coco)</a>
+  <a href="#copiado" data-i18n="demo.copied">Enlace copiado</a>
+  <a href="#falso" data-i18n="demo.fake">No verificado</a>
+</aside>
+
+<script type="module" src="js/cert.js"></script>
+</body>
+</html>
