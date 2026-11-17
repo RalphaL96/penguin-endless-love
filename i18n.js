@@ -95,9 +95,9 @@ export const STRINGS = {
     'awaken.note': 'El mundo digital abrirá primero para los primeros custodios.',
     'awaken.visit': 'Visitar la isla',
 
-    'artist.role': 'Artista y diseñador venezolano',
-    'artist.p1': 'Su trabajo une el arte pop, la ingeniería de materiales y el volumen mínimo para hablar de emociones que cualquiera reconoce. Trabaja desde sus estudios en Caracas y Miami.',
-    'artist.p2': 'Penguin Endless Love es su exploración de la lealtad: una forma natural llevada a su expresión escultórica más simple.',
+    'artist.role': 'Artista contemporáneo y diseñador',
+    'artist.p1': 'Su obra consolida un estilo propio nacido de la fuerza del street art, fusionando el rigor de la ingeniería de materiales, la pureza de la línea y el equilibrio entre lo abstracto y lo figurativo para hablar de emociones universales.',
+    'artist.p2': 'Penguin Endless Love es la materialización de esa visión: una síntesis formal inspirada en Altos de Chavón que trasciende lo literal para convertirse en un manifiesto de lealtad, autenticidad y libertad individual.',
     'artist.portrait': 'Retrato del artista',
 
     'process.title': 'Cómo se hace tu pieza',
@@ -249,9 +249,9 @@ export const STRINGS = {
     'awaken.note': 'The digital world opens first to its earliest custodians.',
     'awaken.visit': 'Visit the island',
 
-    'artist.role': 'Venezuelan artist and designer',
-    'artist.p1': 'His work brings together pop art, material engineering and minimal volume to speak about emotions anyone recognises. He works from his studios in Caracas and Miami.',
-    'artist.p2': 'Penguin Endless Love is his exploration of loyalty: a natural form taken to its simplest sculptural expression.',
+    'artist.role': 'Contemporary artist and designer',
+    'artist.p1': 'His work consolidates a signature style born from the strength of street art, fusing the rigor of material engineering, the purity of line, and the balance between abstract and figurative to speak of universal emotions.',
+    'artist.p2': 'Penguin Endless Love is the materialization of that vision: a formal synthesis inspired by Altos de Chavón that transcends the literal to become a manifesto of loyalty, authenticity, and individual freedom.',
     'artist.portrait': 'Portrait of the artist',
 
     'process.title': 'How your piece is made',
