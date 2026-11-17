@@ -86,12 +86,10 @@ export const STRINGS = {
     'scale.caption': 'Altura frente a una persona de 1,75 m',
     'viewer.drag': 'Arrastra para girar',
 
-    'awaken.title': 'Tu pingüino despierta',
-    'awaken.p1': 'Gerardo Campos convirtió la piedra del pingüino en un corazón tallado en dorado. Llega con cada escultura y un imán lo une al pecho de tu pingüino: puedes llevarlo puesto en la escultura o exhibirlo a su lado.',
-    'awaken.p2': 'Dentro lleva un chip que certifica que tu pieza es auténtica. Acércale tu teléfono y tu pingüino despierta en su mundo digital. Le das un nombre, eliges su carácter y puedes visitarlo cuando quieras para ver qué está haciendo.',
+    'awaken.title': 'Tu pingüino despierta.',
+    'awaken.p1': 'La piedra tradicional se transforma aquí en un corazón tallado en dorado: un símbolo magnético que se une al pecho de la escultura o descansa a su lado. En su interior, un chip de alta tecnología certifica la autenticidad de la pieza y abre la puerta a su universo digital. Al acercar tu teléfono, tu pingüino cobra vida: le das un nombre, defines su carácter y puedes visitarlo siempre que quieras.',
     'awaken.s1': 'Acerca tu teléfono al corazón.',
     'awaken.s2': 'Dale un nombre y un carácter.',
-    'awaken.s3': 'Vuelve cuando quieras a ver qué hace.',
     'awaken.note': 'El mundo digital abrirá primero para los primeros custodios.',
     'awaken.visit': 'Visitar la isla',
 
@@ -240,12 +238,10 @@ export const STRINGS = {
     'scale.caption': 'Height next to a 5′9″ (1.75 m) person',
     'viewer.drag': 'Drag to turn',
 
-    'awaken.title': 'Your penguin wakes up',
-    'awaken.p1': 'Gerardo Campos turned the penguin’s stone into a carved golden heart. It comes with every sculpture, and a magnet holds it to your penguin’s chest: wear it on the sculpture or display it beside it.',
-    'awaken.p2': 'Inside is a chip that certifies your piece is authentic. Hold your phone to it and your penguin wakes up in its digital world. You give it a name, choose its character and can visit whenever you like to see what it is up to.',
-    'awaken.s1': 'Hold your phone to the heart.',
+    'awaken.title': 'Your penguin awakens.',
+    'awaken.p1': 'The traditional stone transforms here into a carved golden heart: a magnetic symbol that attaches to the sculpture’s chest or rests beside it. Inside, a high-tech chip certifies the piece’s authenticity and opens the door to its digital universe. By bringing your phone close, your penguin comes to life: you give it a name, define its character, and can visit it whenever you want.',
+    'awaken.s1': 'Bring your phone close to the heart.',
     'awaken.s2': 'Give it a name and a character.',
-    'awaken.s3': 'Come back any time to see what it is doing.',
     'awaken.note': 'The digital world opens first to its earliest custodians.',
     'awaken.visit': 'Visit the island',
 
