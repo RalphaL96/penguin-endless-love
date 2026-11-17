@@ -420,7 +420,7 @@ section { padding-block: clamp(80px, 12vw, 160px); padding-inline: var(--gutter)
 /* ---------- merch ---------- */
 .merch { max-width: 1280px; margin: 0 auto; }
 .merch-head { margin-bottom: clamp(40px, 6vw, 72px); }
-.merch-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; }
+.merch-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(28px, 4vw, 56px); max-width: 960px; }
 .merch-item { display: grid; gap: 10px; align-content: start; justify-items: start; }
 .merch-item h3 { font-size: var(--step-2); font-weight: 500; }
 .merch-item p { color: var(--mist); font-size: var(--step--1); line-height: 1.55; }
@@ -437,9 +437,7 @@ section { padding-block: clamp(80px, 12vw, 160px); padding-inline: var(--gutter)
 .mv-mark { position: absolute; width: 22%; filter: invert(1) brightness(.2); opacity: .9; }
 .mv-mark-tee { top: 40%; }
 .mv-mark-tote { top: 54%; width: 26%; }
-.mv-mark-cap { top: 39%; width: 18%; }
-.mv-heart { width: 46%; filter: drop-shadow(0 14px 18px rgba(0, 0, 0, .45)); }
-@media (max-width: 960px) { .merch-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .merch-grid { grid-template-columns: 1fr; } }
 
 /* ---------- Gerardo's sketches, used faintly as on the packaging ---------- */
 .sketch {
