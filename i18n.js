@@ -27,9 +27,9 @@ export const STRINGS = {
     'hero.motion': 'Mover con el teléfono',
     'hero.motionOn': 'Movimiento activado',
 
-    'promise.title': 'Una piedra lisa, elegida entre miles.',
-    'promise.p1': 'En las costas de la Antártida, el pingüino papúa recorre la playa buscando la piedra más lisa que pueda encontrar. Cuando la encuentra, la deja a los pies de su pareja. Con esa piedra empiezan el nido y la vida que van a compartir.',
-    'promise.p2': 'Gerardo Campos tomó ese gesto y lo llevó a una sola forma: un pingüino erguido, sin plumas ni detalles, pulido hasta que solo queda la postura. Su superficie refleja la casa donde vive y a quien lo mira.',
+    'promise.title': 'La forma pura de la lealtad.',
+    'promise.p1': 'Más allá de su silueta, esta escultura es un manifiesto sobre el amor, la genuinidad y la lealtad en su estado más real: elegir caminar junto a alguien sin dejar de ser uno mismo. Representa los vínculos que nacen desde la libertad individual, la autenticidad de quien no negocia su esencia y la mirada siempre puesta en lo que está por venir.',
+    'promise.p2': 'Creada a partir de un estudio formal iniciado en Altos de Chavón, la pieza fusiona rasgos de distintas especies en una sola postura erguida, limpia e irrepetible. Sin plumas ni artificios, su superficie pulida captura la luz del espacio que habita y devuelve el reflejo de quien la mira: un recordatorio diario de lo que eliges amar, de tu propia visión y de lo que seguimos construyendo, creando para el futuro.',
     'promise.quote': 'No es solo una figura. Es un ancla emocional en el espacio: un recordatorio permanente de lo que elegimos amar, de nuestra genuinidad y de lo que seguimos creando para el futuro.',
 
     'col.title': 'Haz tu promesa.',
@@ -179,9 +179,9 @@ export const STRINGS = {
     'hero.motion': 'Move with your phone',
     'hero.motionOn': 'Motion on',
 
-    'promise.title': 'One smooth stone, chosen among thousands.',
-    'promise.p1': 'On the shores of Antarctica, the gentoo penguin walks the beach looking for the smoothest stone it can find. When it finds one, it sets it at its partner’s feet. That stone starts the nest, and the life they will share.',
-    'promise.p2': 'Gerardo Campos took that gesture and carried it into a single form: an upright penguin with no feathers or detail, polished until only its posture remains. Its surface reflects the home it lives in and whoever is looking at it.',
+    'promise.title': 'The pure form of loyalty.',
+    'promise.p1': 'Beyond its silhouette, this sculpture is a manifesto on love, genuineness, and loyalty in their truest form: choosing to walk alongside someone without losing who you are. It represents bonds born from individual freedom, the authenticity of staying true to your essence, and a gaze always set on what lies ahead.',
+    'promise.p2': 'Born from a formal study begun at Altos de Chavón, the piece merges traits from diverse species into a single, upright, clean, and unmistakable posture. Without feathers or artifice, its polished surface captures the light of the space it inhabits and returns the reflection of whoever looks at it: a daily reminder of what you choose to love, your own vision, and what we continue to build, creating for the future.',
     'promise.quote': 'It is not just a figure. It is an emotional anchor in space: a permanent reminder of what we choose to love, our genuineness, and what we continue creating for the future.',
 
     'col.title': 'Make your promise.',
