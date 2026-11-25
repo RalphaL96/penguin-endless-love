@@ -134,6 +134,16 @@ const shadowTex = contactShadowTexture();
 const heartMat = new THREE.MeshPhysicalMaterial(FINISHES.heart);
 const finishMats = new Map();
 function materialFor(piece) {
+  if (piece.texture) { // intervened piece: its own paint, baked from the studio's photos
+    const id = `obra-${piece.serial}`;
+    if (finishMats.has(id)) return finishMats.get(id);
+    const m = new THREE.MeshPhysicalMaterial(FINISHES.obra);
+    const tex = new THREE.TextureLoader().load(piece.texture);
+    tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace;
+    m.map = tex;
+    finishMats.set(id, m);
+    return m;
+  }
   const key = piece.finish === 'custom' ? `custom${piece.color_hex}` : piece.finish;
   const surf = piece.surface || 'gloss';
   const id = `${key}-${surf}`;

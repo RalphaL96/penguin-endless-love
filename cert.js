@@ -46,7 +46,8 @@ function ensureStage(model) {
   ['pointerup', 'pointercancel'].forEach((ev) => c.addEventListener(ev, () => { drag = null; }));
   return stage;
 }
-function modelFor(collection) { return collection === 'summer' ? 'rest' : 'stand'; }
+function modelFor(collection, textured = false) { return textured ? (collection === 'summer' ? 'restTex' : 'standTex') : (collection === 'summer' ? 'rest' : 'stand'); }
+let obra = null; // set when the link belongs to an intervened piece: its look is fixed by the studio
 function framing(collection) {
   const summer = collection === 'summer';
   Object.assign(stage.opts, { frameHeight: summer ? 1.45 : 1.2, frameWidth: summer ? 1.05 : undefined, baseYaw: summer ? 0.85 : 0.3 });
@@ -58,7 +59,7 @@ function colorHex() {
   if (form.color === 'custom') return hex(hsvColor(form.hsv.h, form.hsv.s, form.hsv.v));
   return form.color ? `#${FINISHES[form.color].color.toString(16).padStart(6, '0')}`.toUpperCase() : null;
 }
-function colorLabel(key, hx) { return key === 'custom' ? `${t('finish.custom')} ${hx}` : t(`finish.${key}`); }
+function colorLabel(key, hx, title) { return key === 'obra' ? (title ? `${t('finish.obra')} · ${title}` : t('finish.obra')) : key === 'custom' ? `${t('finish.custom')} ${hx}` : t(`finish.${key}`); }
 function personalityLabel(p, tr) { return tr ? `${t(`p.${p}`)} · ${t(`p.${tr}`)}` : t(`p.${p}`); }
 
 function buildOptions() {
@@ -97,7 +98,8 @@ function renderForm() {
   $('#stageName').textContent = name;
   $('#bapBtn').textContent = name ? t('pen.submitNamed', { name }) : t('pen.submit');
   // the stage follows every choice
-  stage.setFinish(form.color || 'clay', form.color === 'custom' ? form.hsv : null, form.surface);
+  if (obra) { $('#bapIntro').textContent = t('bap.obraIntro', { title: obra.title }); $('#bapKicker').textContent = t('bap.obraKicker'); }
+  else stage.setFinish(form.color || 'clay', form.color === 'custom' ? form.hsv : null, form.surface);
   stage.setAnimation(form.personality);
 }
 
@@ -144,7 +146,7 @@ $('#bapForm').addEventListener('submit', async (e) => {
   err.hidden = true;
   const name = $('#penName').value.trim();
   const email = $('#penEmail').value.trim();
-  const missing = !form.color ? 'bap.needColor' : !form.personality ? 'pen.personalityMissing' : !name ? 'pen.nameMissing' : null;
+  const missing = !form.color && !obra ? 'bap.needColor' : !form.personality ? 'pen.personalityMissing' : !name ? 'pen.nameMissing' : null;
   if (missing) { err.textContent = t(missing); err.hidden = false; return; }
   if (!email || !$('#penEmail').checkValidity()) { $('#penEmail').reportValidity(); return; }
   const btn = $('#bapBtn');
@@ -153,10 +155,10 @@ $('#bapForm').addEventListener('submit', async (e) => {
   try {
     const penguin = await claim(result.ticket, {
       collection: form.collection, name, colorKey: form.color, colorHex: colorHex(), surface: form.surface,
-      personality: form.personality, trait: form.trait, email,
+      personality: form.personality, trait: form.trait, email, obraId: obra ? obra.id : undefined,
     });
     showCertificate(penguin, { fresh: true, email });
-    history.replaceState(null, '', MODE === 'demo' ? `#${penguin.serial}` : location.href);
+    if (!obra) history.replaceState(null, '', MODE === 'demo' ? `#${penguin.serial}` : location.href);
   } catch {
     err.textContent = t('pen.error');
     err.hidden = false;
@@ -172,9 +174,11 @@ function showCertificate(p, { fresh = false, email = '' } = {}) {
   show('#bapForm', false);
   show('#certView');
   document.body.dataset.collection = p.collection;
-  ensureStage(modelFor(p.collection));
+  ensureStage(modelFor(p.collection, !!p.texture));
+  if (stage.modelKey !== modelFor(p.collection, !!p.texture)) stage.setModel(modelFor(p.collection, !!p.texture));
   framing(p.collection);
   stage.setFinish(p.color_key, { hex: p.color_hex }, p.surface);
+  stage.setTexture(p.texture || null);
   stage.setAnimation(p.personality);
   renderCertificate();
   if (fresh) $('#certView').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -190,7 +194,7 @@ function renderCertificate() {
   $('#cArrival').textContent = t('cert.arrival', { n: p.arrival });
   $('#cCollection').textContent = p.collection === 'summer' ? 'Penguin Endless Summer' : 'Penguin Endless Love';
   $('#cSwatch').style.background = p.color_hex;
-  $('#cColor').textContent = colorLabel(p.color_key, p.color_hex);
+  $('#cColor').textContent = colorLabel(p.color_key, p.color_hex, p.obra_title);
   $('#cSurface').textContent = t(`surface.${p.surface}`);
   $('#cPersonality').textContent = personalityLabel(p.personality, p.trait);
   $('#cAwake').textContent = fmtDate(p.awakened_at);
@@ -227,11 +231,26 @@ async function run() {
     Object.assign(form, { collection: 'love', color: null, surface: 'gloss', personality: null, trait: null });
     $('#bapForm').reset();
     show('#stateChip'); show('#bapForm'); show('#certView', false);
-    ensureStage('stand');
-    framing('love');
-    stage.setModel('stand');
-    stage.setFinish('clay');
-    stage.colorGoal = null; stage.setFinish('clay');
+    obra = result.obra || null;
+    const steps = $$('.bap-step');
+    steps.forEach((el, i) => { el.hidden = !!obra && i < 3; }); // an intervened piece keeps its collection, colour and finish
+    steps.filter((el) => !el.hidden).forEach((el, i) => { el.querySelector('.bap-n').textContent = i + 1; });
+    if (obra) {
+      form.collection = obra.collection;
+      document.body.dataset.collection = obra.collection;
+      ensureStage(modelFor(obra.collection, true));
+      framing(obra.collection);
+      stage.setModel(modelFor(obra.collection, true));
+      stage.colorGoal = null; stage.setFinish('obra');
+      stage.setTexture(obra.texture);
+    } else {
+      ensureStage('stand');
+      framing('love');
+      stage.setModel('stand');
+      stage.setTexture(null);
+      stage.setFinish('clay');
+      stage.colorGoal = null; stage.setFinish('clay');
+    }
     buildOptions();
     renderForm();
   } else if (result.status === 'authentic') {

@@ -47,8 +47,29 @@ export function serialFor(collection, arrival) {
 
 // The island and the old pages read `piece`: keep that shape for every penguin.
 function withPiece(p) {
-  return { ...p, piece: { serial: p.serial, collection: p.collection, finish: p.color_key, color_hex: p.color_hex, surface: p.surface } };
+  return { ...p, piece: { serial: p.serial, collection: p.collection, finish: p.color_key, color_hex: p.color_hex, surface: p.surface, texture: p.texture || null, size_cm: p.size_cm } };
 }
+
+// ---------- intervened pieces (Modo estudio) ----------
+// The studio certifies a hand-painted piece: its data, its texture baked from photos,
+// and a link of its own for the chip. DEMO: kept in this browser only.
+const OBRAS_KEY = 'pel-demo-obras';
+const obrasMem = [];
+export function listObras() { try { return JSON.parse(localStorage.getItem(OBRAS_KEY)) || obrasMem; } catch { return obrasMem; } }
+function saveObras(list) {
+  obrasMem.splice(0, obrasMem.length, ...list);
+  localStorage.setItem(OBRAS_KEY, JSON.stringify(list)); // throws when the browser's storage is full: the caller reports it
+}
+export function getObra(id) { return listObras().find((o) => o.id === id) || null; }
+/** Certify a piece. Returns the record with its id; the chip link is obraLink(id). */
+export function saveObra(data) {
+  const id = Array.from(crypto.getRandomValues(new Uint8Array(9)), (b) => b.toString(36).padStart(2, '0')).join('').slice(0, 14);
+  const obra = { id, created_at: new Date().toISOString(), serial: null, ...data };
+  saveObras([...listObras(), obra]);
+  return obra;
+}
+export function deleteObra(id) { saveObras(listObras().filter((o) => o.id !== id)); }
+export function obraLink(id) { return new URL(`p.html?o=${id}`, location.href).href; }
 
 const LOCAL_KEY = 'pel-demo-baptisms';
 const memory = []; // fallback when storage is blocked
@@ -74,6 +95,14 @@ export async function verifyTap() {
   }
   // DEMO: the link carries what the chip would: #nuevo (unbaptised heart), a serial, #copiado, #falso
   await new Promise((r) => setTimeout(r, 1500));
+  const obraId = new URLSearchParams(location.search).get('o');
+  if (obraId) { // an intervened piece's own link
+    const obra = getObra(obraId);
+    if (!obra) return { status: 'unverified' };
+    const born = obra.serial && all().find((x) => x.serial === obra.serial);
+    if (born) return { status: 'authentic', penguin: withPiece(born), counter: 1 };
+    return { status: 'new', ticket: `obra-${obra.id}`, counter: 1, obra };
+  }
   const tag = decodeURIComponent(location.hash.slice(1) || 'nuevo').toUpperCase();
   if (tag === 'COPIADO') return { status: 'replayed' };
   if (tag === 'FALSO') return { status: 'unverified' };
@@ -100,10 +129,17 @@ export async function claim(ticket, data) {
   const arrival = DEMO.length + mine.length + 1;
   const p = {
     serial: serialFor(data.collection, arrival), arrival, name: data.name, personality: data.personality,
-    trait: data.trait || null, collection: data.collection, color_key: data.colorKey, color_hex: data.colorHex.toUpperCase(),
+    trait: data.trait || null, collection: data.collection, color_key: data.colorKey, color_hex: (data.colorHex || '#FFFFFF').toUpperCase(),
     surface: data.surface, partner: null, seed: Math.floor(Math.random() * 2147483647),
     awakened_at: new Date().toISOString(), chip: ticket,
   };
+  if (data.obraId) {
+    const obra = getObra(data.obraId);
+    if (!obra || obra.serial) throw new Error('obra-unavailable'); // a piece is baptised once
+    Object.assign(p, { collection: obra.collection, serial: serialFor(obra.collection, arrival), color_key: 'obra', color_hex: '#FFFFFF', surface: 'gloss',
+      texture: obra.texture, obra_id: obra.id, obra_title: obra.title, size_cm: obra.size_cm });
+    saveObras(listObras().map((o) => (o.id === obra.id ? { ...o, serial: p.serial, name: p.name } : o)));
+  }
   saveLocal([...mine, p]);
   return withPiece({ ...p, mine: true });
 }

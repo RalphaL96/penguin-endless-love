@@ -187,3 +187,17 @@ export const ECO = {
     'act.going': 'Walking',
   },
 };
+
+// Intervened pieces (Modo estudio)
+Object.assign(ECO.es, {
+  'finish.obra': 'Obra intervenida',
+  'bap.obraKicker': 'Obra certificada por el estudio',
+  'bap.obraIntro': '«{title}» llega pintada por Gerardo Campos: su color ya es el de tu pieza. Elige su carácter y dale un nombre para que despierte en la isla.',
+  'cert.obra': 'Obra',
+});
+Object.assign(ECO.en, {
+  'finish.obra': 'Hand-painted piece',
+  'bap.obraKicker': 'Piece certified by the studio',
+  'bap.obraIntro': '“{title}” arrives painted by Gerardo Campos: its colour is already your piece’s. Choose its character and give it a name so it wakes up on the island.',
+  'cert.obra': 'Piece',
+});

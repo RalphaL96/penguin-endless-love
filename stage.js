@@ -17,6 +17,7 @@ export const FINISHES = {
   custom:  { color: 0xffffff, metalness: 0.15, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.05 },
   heart:   { color: 0xd9c3a5, metalness: 1.0, roughness: 0.16 },
   clay:    { color: 0xc4c7ca, metalness: 0.0, roughness: 0.78 }, // unpainted resin, before baptism
+  obra:    { color: 0xffffff, metalness: 0.0, roughness: 0.34, clearcoat: 1, clearcoatRoughness: 0.06 }, // intervened piece: the paint comes from its texture
 };
 
 // The hosted preview cannot serve .glb, so it sets window.PEL_MODEL_EXT = '.gltf.json'.
@@ -31,6 +32,10 @@ export const MODELS = {
   standRig: { url: `penguin-standing-rig${EXT}` },
   // rigged reclining penguin (Endless Summer), same 8 clip names with lying-down motion
   restRig: { url: `penguin-rest-rig${EXT}` },
+  // the same rigged meshes in their sculpted pose, with UVs, for intervened pieces (textured from photos).
+  // raw: use the mesh as modelled (it faces +X at 10 cm scale); scale brings it to the size of stand / rest.
+  standTex: { url: `penguin-standing-rig${EXT}`, yaw: -Math.PI / 2, raw: true, scale: 10 },
+  restTex: { url: `penguin-rest-rig${EXT}`, yaw: 0, raw: true, scale: 16.13 },
 };
 
 // Where the magnetic heart sits: upper centre of the chest, just under the beak.
@@ -95,7 +100,8 @@ export function loadModel(key) {
         for (let i = 0; i < at.count; i++) { f[i * 3] = at.getX(i); f[i * 3 + 1] = at.getY(i); f[i * 3 + 2] = at.getZ(i); }
         geo.setAttribute(name, new THREE.BufferAttribute(f, 3));
       }
-      geo.applyMatrix4(mesh.matrixWorld); // bake the quantization transform
+      if (MODELS[key].raw) geo.scale(MODELS[key].scale, MODELS[key].scale, MODELS[key].scale);
+      else geo.applyMatrix4(mesh.matrixWorld); // bake the quantization transform
       if (geo.getAttribute('normal')) geo.normalizeNormals();
       if (MODELS[key].flat) {             // keep the carved facets crisp
         geo = geo.toNonIndexed();
@@ -387,6 +393,18 @@ export class Stage {
       m.clearcoat = 0;
     }
     m.needsUpdate = true;
+  }
+
+  // Paint of an intervened piece: an image URL / data URL, a canvas, or null to remove it.
+  // Only the *Tex models carry UVs.
+  setTexture(src) {
+    if (this.material.map) { this.material.map.dispose(); this.material.map = null; }
+    if (src) {
+      const tex = (typeof src === 'string') ? new THREE.TextureLoader().load(src) : new THREE.CanvasTexture(src);
+      tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+      this.material.map = tex;
+    }
+    this.material.needsUpdate = true;
   }
 
   setScale(s) { this.scaleTarget = s; }

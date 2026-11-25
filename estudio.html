@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Modo estudio · Penguin Endless Love</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#121b24">
+<link rel="icon" type="image/png" href="monogram.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400..700;1,400..600&family=Hanken+Grotesk:wght@300..600&display=swap">
+<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="eco.css">
+<link rel="stylesheet" href="estudio.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body data-collection="love" class="eco-page studio-page">
+<header class="site-header scrolled eco-header">
+  <a class="brand" href="index.html" aria-label="Penguin Endless Love"><img src="logo-white.png" alt="Penguin Endless Love" width="86" height="63"></a>
+  <div class="header-actions">
+    <span class="cert-kicker">Modo estudio</span>
+    <a class="link" href="mundo.html">La isla</a>
+  </div>
+</header>
+
+<main class="studio">
+  <!-- HOME: certified pieces -->
+  <section id="viewHome">
+    <h1 class="bap-title">Obras certificadas</h1>
+    <p class="cert-help">Certifica una obra intervenida: sus datos, sus fotos y el enlace para su corazón.</p>
+    <button type="button" class="btn btn-solid" id="newBtn">Certificar una obra</button>
+    <ul class="obra-list" id="obraList"></ul>
+    <p class="help" id="emptyNote" hidden>Todavía no hay obras certificadas.</p>
+    <p class="help studio-demo">Modo demostración: las obras se guardan solo en este navegador.</p>
+  </section>
+
+  <!-- WIZARD -->
+  <section id="viewWizard" hidden>
+    <ol class="studio-steps" id="stepsNav" aria-label="Pasos">
+      <li data-step="1">La obra</li><li data-step="2">Fotos</li><li data-step="3">Revisar</li><li data-step="4">Enlace</li>
+    </ol>
+
+    <!-- 1. data -->
+    <form class="bap" id="step1" novalidate>
+      <h1 class="bap-title">La obra</h1>
+      <fieldset class="bap-step">
+        <legend>Colección</legend>
+        <div class="coll-grid">
+          <label class="coll"><input type="radio" name="collection" value="love" checked><span class="coll-body"><span class="coll-name">Penguin Endless Love</span><span class="coll-desc">De pie</span></span></label>
+          <label class="coll"><input type="radio" name="collection" value="summer"><span class="coll-body"><span class="coll-name">Penguin Endless Summer</span><span class="coll-desc">En reposo</span></span></label>
+        </div>
+      </fieldset>
+      <div class="field">
+        <label for="oTitle">Título de la obra</label>
+        <input id="oTitle" type="text" maxlength="60" autocomplete="off" required>
+      </div>
+      <fieldset class="bap-step">
+        <legend>Tamaño</legend>
+        <div class="chips" id="sizeChips">
+          <label><input type="radio" name="size" value="14"><span>14 cm</span></label>
+          <label><input type="radio" name="size" value="24"><span>24 cm</span></label>
+          <label><input type="radio" name="size" value="48" checked><span>48 cm</span></label>
+          <label><input type="radio" name="size" value="60"><span>60 cm</span></label>
+          <label><input type="radio" name="size" value="90"><span>90 cm</span></label>
+        </div>
+      </fieldset>
+      <div class="field-row">
+        <div class="field">
+          <label for="oYear">Año</label>
+          <input id="oYear" type="text" inputmode="numeric" maxlength="4">
+        </div>
+        <div class="field">
+          <label for="oTech">Técnica <span class="optional">Opcional</span></label>
+          <input id="oTech" type="text" maxlength="80" placeholder="Acrílico sobre resina">
+        </div>
+      </div>
+      <div class="field">
+        <label for="oNotes">Notas del artista <span class="optional">Opcional</span></label>
+        <textarea id="oNotes" rows="2" maxlength="300"></textarea>
+      </div>
+      <p class="form-error" id="err1" role="alert" hidden></p>
+      <div class="studio-actions">
+        <button type="button" class="btn btn-ghost" data-cancel>Cancelar</button>
+        <button type="submit" class="btn btn-solid">Seguir con las fotos</button>
+      </div>
+    </form>
+
+    <!-- 2. photos -->
+    <div class="bap" id="step2" hidden>
+      <h1 class="bap-title">Fotos</h1>
+      <p class="cert-help">Pon la pieza sobre un fondo liso, con luz pareja. Toma cada foto haciendo coincidir la pieza con la silueta: gira la pieza un octavo de vuelta entre fotos.</p>
+      <div class="studio-actions">
+        <button type="button" class="btn btn-solid" id="camBtn">Abrir la cámara</button>
+        <label class="btn btn-ghost">Subir fotos<input type="file" id="fileInput" accept="image/*" multiple hidden></label>
+        <button type="button" class="btn btn-ghost" id="synthBtn" hidden>Generar fotos de prueba</button>
+      </div>
+      <p class="help" id="shotCount"></p>
+      <ul class="shot-grid" id="shotGrid"></ul>
+      <p class="form-error" id="err2" role="alert" hidden></p>
+      <div class="studio-actions">
+        <button type="button" class="btn btn-ghost" data-back="1">Volver</button>
+        <button type="button" class="btn btn-solid" id="bakeBtn" disabled>Crear la textura</button>
+      </div>
+    </div>
+
+    <!-- 3. review -->
+    <div class="chip studio-review" id="step3" hidden>
+      <div class="chip-stage">
+        <canvas id="reviewCanvas" aria-label="La obra en 3D con su textura" role="img"></canvas>
+        <p class="viewer-hint">Arrastra para girar</p>
+      </div>
+      <div class="chip-panel">
+        <h1 class="bap-title">Revisar</h1>
+        <p class="cert-help" id="reviewHelp"></p>
+        <dl class="cert-grid">
+          <div><dt>Fotos usadas</dt><dd id="rShots"></dd></div>
+          <div><dt>Superficie cubierta</dt><dd id="rCover"></dd></div>
+        </dl>
+        <div class="studio-actions">
+          <button type="button" class="btn btn-ghost" data-back="2">Repetir fotos</button>
+          <button type="button" class="btn btn-solid" id="certBtn">Certificar la obra</button>
+        </div>
+        <p class="form-error" id="err3" role="alert" hidden></p>
+      </div>
+    </div>
+
+    <!-- 4. link -->
+    <div class="bap" id="step4" hidden>
+      <p class="cert-kicker"><span class="cert-check" aria-hidden="true"></span> Obra certificada</p>
+      <h1 class="bap-title" id="doneTitle"></h1>
+      <p class="cert-help">Graba este enlace en el corazón de la obra. Quien lo toque podrá bautizarla una sola vez; después, el enlace mostrará su certificado.</p>
+      <div class="summary">
+        <p class="summary-label">Enlace para el chip</p>
+        <p class="summary-text select" id="doneLink"></p>
+        <button type="button" class="btn btn-solid btn-wide" id="copyBtn">Copiar el enlace</button>
+      </div>
+      <div class="studio-actions">
+        <a class="btn btn-ghost" id="openBap" href="p.html">Probar el bautizo</a>
+        <button type="button" class="btn btn-ghost" id="homeBtn">Ver todas las obras</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- CAMERA -->
+<div class="cam" id="cam" hidden>
+  <div class="cam-frame" id="camFrame">
+    <video id="camVideo" playsinline autoplay muted></video>
+    <canvas id="camGuide" aria-hidden="true"></canvas>
+  </div>
+  <div class="cam-bar">
+    <p class="cam-label" id="camLabel" aria-live="polite"></p>
+    <p class="cam-note" id="camNote" aria-live="polite"></p>
+    <div class="cam-controls">
+      <button type="button" class="btn btn-ghost btn-small" id="camClose">Terminar</button>
+      <button type="button" class="cam-shutter" id="camShot"><span class="sr-only">Tomar la foto</span></button>
+      <button type="button" class="btn btn-ghost btn-small" id="camSkip">Saltar</button>
+    </div>
+  </div>
+</div>
+
+<div class="studio-busy" id="busy" hidden><p id="busyText">Creando la textura…</p></div>
+<script type="module" src="estudio.js"></script>
+</body>
+</html>
