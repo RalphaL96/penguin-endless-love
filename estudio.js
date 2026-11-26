@@ -2,7 +2,7 @@
 // 1 data → 2 guided photos → 3 texture + 3D review → 4 the link for the chip.
 // The photo-to-texture work happens here, in the browser (bake.js): no desktop software per piece.
 import { Stage } from './stage.js';
-import { parseGLB, VIEWS, renderView, maskFromBackdrop, maskLooksRight, buildAtlas, bake } from './bake.js';
+import { parseGLB, VIEWS, renderView, maskFromBackdrop, maskLooksRight, buildAtlas, bake, registerShots } from './bake.js';
 import { listObras, saveObra, deleteObra, obraLink, obraLocalLink, getObra } from './registry.js';
 
 const $ = (s) => document.querySelector(s);
@@ -294,12 +294,14 @@ function reviewStage(model) {
 }
 
 $('#bakeBtn').addEventListener('click', async () => {
-  show('#busy'); $('#busyText').textContent = 'Creando la textura…';
+  show('#busy'); $('#busyText').textContent = 'Alineando las fotos y creando la textura…';
   await new Promise((r) => setTimeout(r, 60)); // let the message paint before the heavy work
   try {
     const geo = await geometry(state.data.collection);
     const shots = state.shots.filter(Boolean);
-    const out = bake(geo, shots, { atlas: geo.atlas });
+    const reg = registerShots(geo, shots); // find the pose each photo was really taken from
+    const out = bake(geo, reg, { atlas: geo.atlas });
+    const aligned = reg.filter((r) => r.iou >= 0.85).length;
     const c = document.createElement('canvas'); c.width = c.height = out.size;
     c.getContext('2d').putImageData(new ImageData(out.data, out.size, out.size), 0, 0);
     state.texture = c; state.result = out;
@@ -307,10 +309,11 @@ $('#bakeBtn').addEventListener('click', async () => {
     reviewStage(state.data.collection === 'summer' ? 'restTex' : 'standTex').setTexture(c);
     const used = out.perShot.filter((p) => p.used > 0).length;
     $('#rTitle').textContent = state.data.title; $('#rSize').textContent = `${state.data.size_cm} cm`;
-    $('#rShots').textContent = `${used} de ${shots.length}`;
+    $('#rShots').textContent = `${used} de ${shots.length} (${aligned} bien alineadas)`;
     $('#rCover').textContent = `${Math.round(out.coverage * 100)} %`;
     $('#reviewHelp').textContent = out.coverage < 0.8
       ? 'Quedaron zonas sin foto: se rellenaron con el color vecino. Si se nota, vuelve y añade las fotos que faltan.'
+      : aligned < shots.length * 0.7 ? 'Varias fotos no coinciden con la silueta de la pieza y cuentan poco. Repítelas con la pieza completa dentro del cuadro, sobre un fondo liso.'
       : 'Gira la obra y compárala con la pieza real. Si una zona no convence, repite esa foto.';
   } catch (err) {
     console.error(err);

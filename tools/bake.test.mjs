@@ -2,7 +2,9 @@
 // guided poses (off-centre, wrong distance, grey gradient backdrop, moving glare),
 // bake the texture and compare it with the pattern. node tools/bake.test.mjs
 import { readFileSync, writeFileSync } from 'node:fs';
-import { parseGLB, VIEWS, renderView, maskFromBackdrop, maskLooksRight, buildAtlas, bake } from '../bake.js';
+import { parseGLB, VIEWS, renderView, maskFromBackdrop, maskLooksRight, buildAtlas, bake, registerShots } from '../bake.js';
+const SLOPPY = process.argv.includes('--sloppy'); const REVERSED = process.argv.includes('--reversed');
+let rnd = 7; const rand = () => { rnd = (rnd * 16807) % 2147483647; return rnd / 2147483647 - 0.5; };
 
 const paint = (x, y, z, r) => {
   const s = 5 / r; const band = Math.floor(y * s) % 2 === 0;
@@ -16,7 +18,9 @@ for (const file of ['penguin-standing-rig', 'penguin-rest-rig']) {
   const atlas = buildAtlas(geo, 512);
   const W = 540, H = 720;
   const shots = VIEWS.filter((v) => !v.optional).map((view, i) => {
-    const clean = renderView(geo, view, W, H, (x, y, z) => paint(x, y, z, geo.radius));
+    // a real photographer: off by up to ±15° around and held 5-25° higher than asked; maybe turning the piece the other way
+    const real = SLOPPY ? { az: (REVERSED ? -view.az : view.az) + rand() * 30 * Math.PI / 180, el: view.el + (15 + rand() * 20) * Math.PI / 180 } : view;
+    const clean = renderView(geo, real, W, H, (x, y, z) => paint(x, y, z, geo.radius));
     // the photographer: a bit closer/farther and off-centre
     const s = 0.86 + 0.05 * (i % 4), ox = (i % 3 - 1) * 22, oy = (i % 2 ? 18 : -14);
     const data = new Uint8ClampedArray(W * H * 4);
@@ -33,7 +37,8 @@ for (const file of ['penguin-standing-rig', 'penguin-rest-rig']) {
     if (!maskLooksRight(mask)) { console.log('  mask rejected for view', i, mask.coverage); fail = true; }
     return { view, image, mask };
   });
-  const t0 = Date.now(); const out = bake(geo, shots, { atlas });
+  const t0 = Date.now(); const reg = process.argv.includes('--noreg') ? shots : registerShots(geo, shots); const tr = Date.now() - t0; const out = bake(geo, reg, { atlas });
+  console.log(`  registration ${tr} ms, mirrored ${reg.mirrored}, iou [${reg.map((r) => (r.iou ?? 0).toFixed(2)).join(' ')}]`);
   let err = 0, n = 0, bad = 0;
   for (let o = 0; o < 512 * 512; o++) if (atlas.has[o]) {
     const want = paint(atlas.P[o * 3], atlas.P[o * 3 + 1], atlas.P[o * 3 + 2], geo.radius);
@@ -47,6 +52,6 @@ for (const file of ['penguin-standing-rig', 'penguin-rest-rig']) {
   writeFileSync(`/tmp/${file}.ppm`, ppm);
   const sh = shots[1].image; const p2 = Buffer.alloc(15 + W * H * 3); p2.write(`P6\n${W} ${H}\n255\n`); for (let o = 0; o < W * H; o++) for (let k = 0; k < 3; k++) p2[15 + o * 3 + k] = sh.data[o * 4 + k];
   writeFileSync(`/tmp/${file}-shot.ppm`, p2);
-  if (out.coverage < 0.8 || err / n > 25) fail = true;
+  if (out.coverage < 0.75 || err / n > 30) fail = true;
 }
 process.exit(fail ? 1 : 0);

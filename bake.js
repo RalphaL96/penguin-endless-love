@@ -270,6 +270,71 @@ export function alignToGuide(geo, view, aspect, mask) {
   return { s, dx, dy, auto: true };
 }
 
+const D2 = Math.PI / 180;
+/** How well a mask matches the model seen from `view` (0..1), and the framing that matches them. */
+export function silhouetteScore(geo, view, aspect, mask, H = 64) {
+  const W = Math.max(8, Math.round(H * aspect));
+  const rv = renderView(geo, view, W, H); if (!rv.bbox || !mask || !mask.bbox) return { iou: 0, al: { s: 1, dx: 0, dy: 0, auto: false } };
+  const g = rv.bbox; const gb = { x0: g.x0 / W, y0: g.y0 / H, x1: g.x1 / W, y1: g.y1 / H }; const m = mask.bbox;
+  const s = (((m.x1 - m.x0) / (gb.x1 - gb.x0)) + ((m.y1 - m.y0) / (gb.y1 - gb.y0))) / 2;
+  const dx = (m.x0 + m.x1) / 2 - 0.5 - ((gb.x0 + gb.x1) / 2 - 0.5) * s;
+  const dy = (m.y0 + m.y1) / 2 - 0.5 - ((gb.y0 + gb.y1) / 2 - 0.5) * s;
+  let inter = 0; let ga = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (rv.depth[y * W + x] === Infinity) continue;
+    ga++;
+    const fx = ((x + 0.5) / W - 0.5) * s + 0.5 + dx; const fy = ((y + 0.5) / H - 0.5) * s + 0.5 + dy;
+    if (fx >= 0 && fx < 1 && fy >= 0 && fy < 1 && mask.alpha[Math.floor(fy * mask.h) * mask.w + Math.floor(fx * mask.w)]) inter++;
+  }
+  const ma = mask.coverage / (s * s) * W * H; // the mask's area, in guide pixels
+  return { iou: inter / Math.max(1, ga + ma - inter), al: { s, dx, dy, auto: true } };
+}
+
+/**
+ * Find the pose a photo was really taken from. Nobody holds a phone at exactly the
+ * asked angle: search around the nominal view for the one whose silhouette matches
+ * the piece's mask best. Returns { view, al, iou }.
+ */
+export function refinePose(geo, view, aspect, mask, mirror = false) {
+  const base = { az: mirror ? -view.az : view.az, el: view.el };
+  let best = { score: -1, iou: 0, al: { s: 1, dx: 0, dy: 0, auto: false }, view: base };
+  const tryAt = (az, el, H) => {
+    const v = { az, el: Math.max(-88 * D2, Math.min(88 * D2, el)) };
+    const r = silhouetteScore(geo, v, aspect, mask, H);
+    if (!(r.al.s > 0.5 && r.al.s < 2)) return; // not a believable framing
+    // a penguin is almost round: its outline says little about the turn, so stay near the asked view unless the outline clearly disagrees
+    const da = (az - base.az) / (30 * D2); const de = (v.el - base.el) / (30 * D2);
+    const score = Math.min(1, r.iou) - 0.1 * da * da - 0.015 * de * de;
+    if (score > best.score) best = { score, iou: Math.min(1, r.iou), al: r.al, view: v };
+  };
+  // taken as asked? then keep the asked pose: searching could only drift on a nearly round shape
+  const asked = silhouetteScore(geo, base, aspect, mask, 96);
+  if (asked.iou >= 0.94 && asked.al.s > 0.5 && asked.al.s < 2) return { iou: Math.min(1, asked.iou), al: asked.al, view: base };
+  for (let a = -30; a <= 30; a += 6) for (let e = -18; e <= 30; e += 6) tryAt(base.az + a * D2, base.el + e * D2, 56);
+  const c = best.view;
+  for (let a = -4; a <= 4; a += 2) for (let e = -4; e <= 4; e += 2) tryAt(c.az + a * D2, c.el + e * D2, 96);
+  return best;
+}
+
+/**
+ * Register a whole session: every masked photo gets its real pose. Also settles which
+ * way the piece was turned between photos (the ring can be shot in either direction).
+ * Returns shots with { view (refined), align, iou, nominal }.
+ */
+export function registerShots(geo, shots, onProgress = null) {
+  const run = (mirror) => shots.map((sh, i) => {
+    onProgress && onProgress(i / shots.length / 2 + (mirror ? 0.5 : 0));
+    if (!sh.mask) return { ...sh, nominal: sh.view, iou: 0, align: { s: 1, dx: 0, dy: 0, auto: false } };
+    const r = refinePose(geo, sh.view, sh.image.width / sh.image.height, sh.mask, mirror);
+    return { ...sh, nominal: sh.view, view: r.view, align: r.al, iou: r.iou };
+  });
+  const a = run(false); const b = run(true);
+  const sum = (l) => l.reduce((t, x) => t + x.iou, 0);
+  const pick = sum(b) > sum(a) * 1.03 ? b : a;
+  pick.mirrored = pick === b;
+  return pick;
+}
+
 /**
  * Blend the photos into one texture.
  * shots: [{ view, image: {data, width, height} (RGBA), mask?, align? }]
@@ -282,7 +347,9 @@ export function bake(geo, shots, { size = 1024, atlas = null, onProgress = null 
     const W = sh.image.width; const H = sh.image.height; const aspect = W / H;
     const zh = 384; const zw = Math.max(8, Math.round(zh * aspect));
     const rv = renderView(geo, sh.view, zw, zh);
-    return { ...sh, W, H, cam: rv.cam, depth: rv.depth, zw, zh, al: sh.align || alignToGuide(geo, sh.view, aspect, sh.mask), gain: [1, 1, 1], used: 0 };
+    // a photo that matched its silhouette well counts fully; a doubtful one barely
+    const q = sh.iou == null ? 1 : sh.mask ? Math.max(0.02, Math.min(1, (sh.iou - 0.55) / 0.3)) ** 2 : 0.05;
+    return { ...sh, W, H, cam: rv.cam, depth: rv.depth, zw, zh, al: sh.align || alignToGuide(geo, sh.view, aspect, sh.mask), gain: [1, 1, 1], used: 0, q };
   });
   const bias = geo.radius * 0.02;
   const sample = (p, o, out) => {
@@ -299,7 +366,7 @@ export function bake(geo, shots, { size = 1024, atlas = null, onProgress = null 
     if (z > p.depth[Math.floor(gy * p.zh) * p.zw + Math.floor(gx * p.zw)] + bias) return 0; // hidden behind another part
     const fx = (gx - 0.5) * p.al.s + 0.5 + p.al.dx; const fy = (gy - 0.5) * p.al.s + 0.5 + p.al.dy;
     if (fx < 0 || fx >= 1 || fy < 0 || fy >= 1) return 0;
-    let w = facing * facing * facing;
+    const f2 = facing * facing; let w = f2 * f2 * f2 * f2 * p.q; // facing^8: the most frontal photo owns the texel, so views do not ghost
     if (p.mask) { if (!p.mask.alpha[Math.floor(fy * p.mask.h) * p.mask.w + Math.floor(fx * p.mask.w)]) return 0; }
     const X = fx * p.W - 0.5; const Y = fy * p.H - 0.5;
     const x0 = Math.max(0, Math.floor(X)); const y0 = Math.max(0, Math.floor(Y)); const x1 = Math.min(p.W - 1, x0 + 1); const y1 = Math.min(p.H - 1, y0 + 1);
@@ -360,5 +427,5 @@ export function bake(geo, shots, { size = 1024, atlas = null, onProgress = null 
     frontier = next;
   }
   onProgress && onProgress(1);
-  return { data, size: S, coverage: seen / A.texels, perShot: prep.map((p) => ({ used: p.used, gain: p.gain, align: p.al })) };
+  return { data, size: S, coverage: seen / A.texels, perShot: prep.map((p) => ({ used: p.used, gain: p.gain, align: p.al, iou: p.iou, q: p.q })) };
 }
