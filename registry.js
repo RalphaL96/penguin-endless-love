@@ -12,25 +12,8 @@ export const MODE = CONFIG ? 'live' : 'demo';
 export const PERSONALITIES = ['tender', 'explorer', 'dreamer', 'curious', 'calm', 'playful'];
 
 // Sample colony (arrival order = list order).
-const DEMO = [
-  ['Luna', 'dreamer', 'curious', 'love', 'silver', '#F1F3F5', 2],
-  ['Sol', 'tender', null, 'love', 'gold', '#E2B867', 1],
-  ['Bruno', 'explorer', 'calm', 'love', 'onyx', '#050607', null],
-  ['Nieve', 'calm', null, 'summer', 'silver', '#F1F3F5', null],
-  ['Coco', 'playful', 'curious', 'summer', 'custom', '#E8769A', null],
-  ['Amelia', 'curious', null, 'love', 'emerald', '#0A6A44', null],
-  ['Kai', 'playful', null, 'love', 'custom', '#3FA7D6', null],
-  ['Olivia', 'tender', 'dreamer', 'love', 'silver', '#F1F3F5', 9],
-  ['Mateo', 'calm', null, 'love', 'onyx', '#050607', 8],
-  ['Pip', 'curious', 'playful', 'summer', 'gold', '#E2B867', null],
-  ['Aurora', 'dreamer', null, 'summer', 'custom', '#F2B544', null],
-  ['Tomás', 'explorer', null, 'love', 'silver', '#F1F3F5', null],
-  ['Vera', 'calm', 'tender', 'love', 'gold', '#E2B867', null],
-  ['Hugo', 'playful', null, 'love', 'onyx', '#050607', null],
-  ['Mía', 'tender', null, 'summer', 'ruby', '#8C0F26', null],
-  ['Bastian', 'explorer', 'curious', 'summer', 'emerald', '#0A6A44', null],
-  ['Isla', 'dreamer', null, 'love', 'custom', '#9B8CF2', null],
-].map(([name, personality, trait, collection, color_key, color_hex, partnerIdx], i) => {
+// The sample colony was removed for launch: the island starts empty and PEL-0001 is the first real piece.
+const DEMO = [].map(([name, personality, trait, collection, color_key, color_hex, partnerIdx], i) => {
   const arrival = i + 1;
   return {
     serial: serialFor(collection, arrival), arrival, name, personality, trait, collection, color_key, color_hex,
@@ -53,7 +36,7 @@ function withPiece(p) {
 // ---------- intervened pieces (Modo estudio) ----------
 // The studio certifies a hand-painted piece: its data, its texture baked from photos,
 // and a link of its own for the chip. DEMO: kept in this browser only.
-const OBRAS_KEY = 'pel-demo-obras';
+const OBRAS_KEY = 'pel-obras-v1'; // new key at launch: test pieces saved under the old one are ignored
 const obrasMem = [];
 export function listObras() { try { return JSON.parse(localStorage.getItem(OBRAS_KEY)) || obrasMem; } catch { return obrasMem; } }
 function saveObras(list) {
@@ -71,7 +54,7 @@ export function saveObra(data) {
 export function deleteObra(id) { saveObras(listObras().filter((o) => o.id !== id)); }
 export function obraLink(id) { return new URL(`p.html?o=${id}`, location.href).href; }
 
-const LOCAL_KEY = 'pel-demo-baptisms';
+const LOCAL_KEY = 'pel-baptisms-v1'; // new key at launch: test baptisms saved under the old one are ignored
 const memory = []; // fallback when storage is blocked
 function local() { try { return JSON.parse(localStorage.getItem(LOCAL_KEY)) || memory; } catch { return memory; } }
 function saveLocal(list) { memory.splice(0, memory.length, ...list); try { localStorage.setItem(LOCAL_KEY, JSON.stringify(list)); } catch { /* storage unavailable */ } }
@@ -136,8 +119,8 @@ export async function claim(ticket, data) {
   if (data.obraId) {
     const obra = getObra(data.obraId);
     if (!obra || obra.serial) throw new Error('obra-unavailable'); // a piece is baptised once
-    Object.assign(p, { collection: obra.collection, serial: serialFor(obra.collection, arrival), color_key: 'obra', color_hex: '#FFFFFF', surface: 'gloss',
-      texture: obra.texture, obra_id: obra.id, obra_title: obra.title, size_cm: obra.size_cm });
+    Object.assign(p, { collection: obra.collection, serial: serialFor(obra.collection, arrival), color_key: 'obra', color_hex: '#FFFFFF', surface: obra.surface || 'gloss',
+      texture: obra.texture, obra_id: obra.id, obra_title: obra.title, size_cm: obra.size_cm, year: obra.year, technique: obra.technique });
     saveObras(listObras().map((o) => (o.id === obra.id ? { ...o, serial: p.serial, name: p.name } : o)));
   }
   saveLocal([...mine, p]);

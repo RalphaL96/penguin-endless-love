@@ -196,6 +196,18 @@ function renderCertificate() {
   $('#cSwatch').style.background = p.color_hex;
   $('#cColor').textContent = colorLabel(p.color_key, p.color_hex, p.obra_title);
   $('#cSurface').textContent = t(`surface.${p.surface}`);
+  // an intervened piece also certifies its size, technique and year
+  const grid = $('#cSurface').closest('dl');
+  grid.querySelectorAll('.obra-row').forEach((el) => el.remove());
+  if (p.obra_title) {
+    for (const [k, v] of [['cert.size', p.size_cm ? `${p.size_cm} cm` : ''], ['cert.technique', p.technique], ['cert.year', p.year]]) {
+      if (!v) continue;
+      const row = document.createElement('div'); row.className = 'obra-row';
+      const dt = document.createElement('dt'); dt.textContent = t(k);
+      const dd = document.createElement('dd'); dd.textContent = v;
+      row.append(dt, dd); grid.append(row);
+    }
+  }
   $('#cPersonality').textContent = personalityLabel(p.personality, p.trait);
   $('#cAwake').textContent = fmtDate(p.awakened_at);
   $('#cReads').textContent = result?.counter != null ? `Nº ${result.counter}` : '—';
@@ -241,7 +253,7 @@ async function run() {
       ensureStage(modelFor(obra.collection, true));
       framing(obra.collection);
       stage.setModel(modelFor(obra.collection, true));
-      stage.colorGoal = null; stage.setFinish('obra');
+      stage.colorGoal = null; stage.setFinish('obra', null, obra.surface || 'gloss');
       stage.setTexture(obra.texture);
     } else {
       ensureStage('stand');

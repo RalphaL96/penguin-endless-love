@@ -391,6 +391,11 @@ export class Stage {
       // satin metal for metallic finishes, soft-touch paint for the rest
       m.roughness = f.metalness > 0.9 ? 0.42 : 0.62;
       m.clearcoat = 0;
+    } else if (this.surface === 'satin') {
+      // between the two: a soft sheen, no mirror
+      m.roughness = f.metalness > 0.9 ? 0.26 : 0.46;
+      m.clearcoat = f.clearcoat ? 0.3 : 0;
+      m.clearcoatRoughness = 0.4;
     }
     m.needsUpdate = true;
   }

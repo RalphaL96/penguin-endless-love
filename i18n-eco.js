@@ -194,10 +194,14 @@ Object.assign(ECO.es, {
   'bap.obraKicker': 'Obra certificada por el estudio',
   'bap.obraIntro': '«{title}» llega pintada por Gerardo Campos: su color ya es el de tu pieza. Elige su carácter y dale un nombre para que despierte en la isla.',
   'cert.obra': 'Obra',
+  'cert.size': 'Tamaño', 'cert.technique': 'Técnica', 'cert.year': 'Año',
+  'world.none': 'La isla espera a su primer pingüino', 'world.one': '1 pingüino despierto',
 });
 Object.assign(ECO.en, {
   'finish.obra': 'Hand-painted piece',
   'bap.obraKicker': 'Piece certified by the studio',
   'bap.obraIntro': '“{title}” arrives painted by Gerardo Campos: its colour is already your piece’s. Choose its character and give it a name so it wakes up on the island.',
   'cert.obra': 'Piece',
+  'cert.size': 'Size', 'cert.technique': 'Technique', 'cert.year': 'Year',
+  'world.none': 'The island awaits its first penguin', 'world.one': '1 penguin awake',
 });

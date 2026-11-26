@@ -68,6 +68,11 @@
           <label><input type="radio" name="size" value="48" checked><span>48 cm</span></label>
           <label><input type="radio" name="size" value="60"><span>60 cm</span></label>
           <label><input type="radio" name="size" value="90"><span>90 cm</span></label>
+          <label><input type="radio" name="size" value="other"><span>Otra medida</span></label>
+        </div>
+        <div class="field" id="sizeOtherField" hidden>
+          <label for="oSizeOther">Medida en centímetros</label>
+          <input id="oSizeOther" type="text" inputmode="numeric" maxlength="3" placeholder="35">
         </div>
       </fieldset>
       <div class="field-row">
@@ -118,7 +123,17 @@
       <div class="chip-panel">
         <h1 class="bap-title">Revisar</h1>
         <p class="cert-help" id="reviewHelp"></p>
+        <fieldset class="bap-step">
+          <legend>Acabado de la superficie</legend>
+          <div class="chips" id="surfaceChips">
+            <label><input type="radio" name="surface" value="gloss" checked><span>Brillante</span></label>
+            <label><input type="radio" name="surface" value="satin"><span>Satinado</span></label>
+            <label><input type="radio" name="surface" value="matte"><span>Mate</span></label>
+          </div>
+        </fieldset>
         <dl class="cert-grid">
+          <div><dt>Obra</dt><dd id="rTitle"></dd></div>
+          <div><dt>Tamaño</dt><dd id="rSize"></dd></div>
           <div><dt>Fotos usadas</dt><dd id="rShots"></dd></div>
           <div><dt>Superficie cubierta</dt><dd id="rCover"></dd></div>
         </dl>
@@ -134,10 +149,10 @@
     <div class="bap" id="step4" hidden>
       <p class="cert-kicker"><span class="cert-check" aria-hidden="true"></span> Obra certificada</p>
       <h1 class="bap-title" id="doneTitle"></h1>
-      <p class="cert-help">Graba este enlace en el corazón de la obra. Quien lo toque podrá bautizarla una sola vez; después, el enlace mostrará su certificado.</p>
+      <p class="cert-help">Este es el enlace del certificado digital de la obra: cópialo y grábalo en su corazón. Quien lo abra podrá bautizarla una sola vez; desde entonces, el mismo enlace muestra su certificado.</p>
       <div class="summary">
-        <p class="summary-label">Enlace para el chip</p>
-        <p class="summary-text select" id="doneLink"></p>
+        <label class="summary-label" for="doneLink">Enlace del certificado digital</label>
+        <input class="link-field" id="doneLink" type="text" readonly>
         <button type="button" class="btn btn-solid btn-wide" id="copyBtn">Copiar el enlace</button>
       </div>
       <div class="studio-actions">

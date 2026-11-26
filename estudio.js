@@ -40,7 +40,7 @@ function renderHome() {
       <img src="${o.photo || ''}" alt="">
       <div>
         <p class="obra-title"></p>
-        <p class="obra-meta">${o.collection === 'summer' ? 'Endless Summer' : 'Endless Love'} · ${o.size_cm} cm${o.year ? ` · ${o.year}` : ''}</p>
+        <p class="obra-meta">${o.collection === 'summer' ? 'Endless Summer' : 'Endless Love'} · ${o.size_cm} cm · ${{ gloss: 'Brillante', satin: 'Satinado', matte: 'Mate' }[o.surface || 'gloss']}${o.year ? ` · ${o.year}` : ''}</p>
         <p class="obra-meta obra-state"></p>
       </div>
       <div class="obra-actions">
@@ -80,7 +80,8 @@ function goStep(n) {
 }
 $('#newBtn').addEventListener('click', () => {
   Object.assign(state, { data: null, shots: new Array(VIEWS.length).fill(null), texture: null, result: null });
-  $('#step1').reset(); $('#oYear').value = new Date().getFullYear();
+  $('#step1').reset(); $('#oYear').value = new Date().getFullYear(); show('#sizeOtherField', false);
+  $('#surfaceChips input[value=gloss]').checked = true;
   document.body.dataset.collection = 'love';
   goStep(1);
 });
@@ -89,7 +90,10 @@ $$('[data-back]').forEach((b) => b.addEventListener('click', () => goStep(+b.dat
 $('#homeBtn').addEventListener('click', goHome);
 
 // ---------- 1. data ----------
-$('#step1').addEventListener('change', (e) => { if (e.target.name === 'collection') document.body.dataset.collection = e.target.value; });
+$('#step1').addEventListener('change', (e) => {
+  if (e.target.name === 'collection') document.body.dataset.collection = e.target.value;
+  if (e.target.name === 'size') show('#sizeOtherField', e.target.value === 'other');
+});
 $('#step1').addEventListener('submit', async (e) => {
   e.preventDefault();
   const f = new FormData(e.target); const title = $('#oTitle').value.trim();
@@ -97,7 +101,9 @@ $('#step1').addEventListener('submit', async (e) => {
   show('#err1', false);
   const collection = f.get('collection');
   if (state.data && state.data.collection !== collection) state.shots.fill(null); // other shape: other photos
-  state.data = { collection, title, size_cm: +f.get('size'), year: $('#oYear').value.trim(), technique: $('#oTech').value.trim(), notes: $('#oNotes').value.trim() };
+  const size = f.get('size') === 'other' ? parseInt($('#oSizeOther').value, 10) : +f.get('size');
+  if (!(size >= 5 && size <= 300)) { $('#err1').textContent = 'Escribe la medida en centímetros, entre 5 y 300.'; show('#err1'); $('#oSizeOther').focus(); return; }
+  state.data = { collection, title, size_cm: size, surface: state.data?.surface || 'gloss', year: $('#oYear').value.trim(), technique: $('#oTech').value.trim(), notes: $('#oNotes').value.trim() };
   goStep(2);
   await renderShots();
 });
@@ -272,7 +278,7 @@ function reviewStage(model) {
     Object.assign(stage.opts, { frameHeight: summer ? 1.45 : 1.2, frameWidth: summer ? 1.05 : undefined });
     stage.setModel(model);
   }
-  stage.setFinish('obra');
+  stage.setFinish('obra', null, state.data.surface);
   return stage;
 }
 
@@ -289,6 +295,7 @@ $('#bakeBtn').addEventListener('click', async () => {
     goStep(3);
     reviewStage(state.data.collection === 'summer' ? 'restTex' : 'standTex').setTexture(c);
     const used = out.perShot.filter((p) => p.used > 0).length;
+    $('#rTitle').textContent = state.data.title; $('#rSize').textContent = `${state.data.size_cm} cm`;
     $('#rShots').textContent = `${used} de ${shots.length}`;
     $('#rCover').textContent = `${Math.round(out.coverage * 100)} %`;
     $('#reviewHelp').textContent = out.coverage < 0.8
@@ -299,6 +306,8 @@ $('#bakeBtn').addEventListener('click', async () => {
     $('#err2').textContent = 'No se pudo crear la textura. Vuelve a intentarlo; si se repite, toma las fotos de nuevo.'; show('#err2');
   } finally { show('#busy', false); }
 });
+
+$('#surfaceChips').addEventListener('change', (e) => { state.data.surface = e.target.value; stage.setFinish('obra', null, e.target.value); });
 
 // ---------- 4. certify ----------
 $('#certBtn').addEventListener('click', () => {
@@ -315,9 +324,10 @@ $('#certBtn').addEventListener('click', () => {
   }
   const link = obraLink(obra.id);
   $('#doneTitle').textContent = obra.title;
-  $('#doneLink').textContent = link;
+  $('#doneLink').value = link;
   $('#openBap').href = link;
-  $('#copyBtn').onclick = () => copyText(link, $('#copyBtn'));
+  $('#copyBtn').onclick = () => { $('#doneLink').select(); copyText(link, $('#copyBtn')); };
+  $('#doneLink').onfocus = () => $('#doneLink').select();
   goStep(4);
 });
 

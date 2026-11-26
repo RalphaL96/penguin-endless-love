@@ -138,6 +138,8 @@ function materialFor(piece) {
     const id = `obra-${piece.serial}`;
     if (finishMats.has(id)) return finishMats.get(id);
     const m = new THREE.MeshPhysicalMaterial(FINISHES.obra);
+    if (piece.surface === 'matte') { m.roughness = 0.62; m.clearcoat = 0; }
+    else if (piece.surface === 'satin') { m.roughness = 0.46; m.clearcoat = 0.3; m.clearcoatRoughness = 0.4; }
     const tex = new THREE.TextureLoader().load(piece.texture);
     tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace;
     m.map = tex;
@@ -152,10 +154,12 @@ function materialFor(piece) {
   const m = new THREE.MeshPhysicalMaterial(f);
   if (piece.finish === 'custom' && piece.color_hex) m.color.set(piece.color_hex);
   if (surf === 'matte') { m.roughness = f.metalness > 0.9 ? 0.42 : 0.62; m.clearcoat = 0; }
+  else if (surf === 'satin') { m.roughness = f.metalness > 0.9 ? 0.26 : 0.46; m.clearcoat = f.clearcoat ? 0.3 : 0; m.clearcoatRoughness = 0.4; }
   finishMats.set(id, m);
   return m;
 }
 
+const countText = () => (birds.length === 0 ? t('world.none') : birds.length === 1 ? t('world.one') : t('world.count', { n: birds.length }));
 const H = 0.85; // standing height in world units
 let colony, birds = [], mine = null, selected = null, follow = null;
 
@@ -228,7 +232,7 @@ async function build() {
     select(mine);
     setFollow(mine);
   }
-  $('#count').textContent = t('world.count', { n: birds.length });
+  $('#count').textContent = countText();
   $('#loading').classList.add('done');
 }
 
@@ -367,7 +371,7 @@ function applyLanguage(l) {
   document.documentElement.lang = l;
   $$('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
   $$('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === l)));
-  if (colony) { $('#count').textContent = t('world.count', { n: birds.length }); select(selected); }
+  if (colony) { $('#count').textContent = countText(); select(selected); }
 }
 $$('.lang button').forEach((b) => b.addEventListener('click', () => applyLanguage(b.dataset.lang)));
 
