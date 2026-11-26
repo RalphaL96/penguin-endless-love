@@ -3,7 +3,7 @@
 // The photo-to-texture work happens here, in the browser (bake.js): no desktop software per piece.
 import { Stage } from './stage.js';
 import { parseGLB, VIEWS, renderView, maskFromBackdrop, maskLooksRight, buildAtlas, bake } from './bake.js';
-import { listObras, saveObra, deleteObra, obraLink } from './registry.js';
+import { listObras, saveObra, deleteObra, obraLink, obraLocalLink, getObra } from './registry.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -45,7 +45,8 @@ function renderHome() {
       </div>
       <div class="obra-actions">
         <button type="button" class="btn btn-ghost btn-small" data-copy="${o.id}">Copiar el enlace</button>
-        <a class="btn btn-ghost btn-small" href="${obraLink(o.id)}">${o.serial ? 'Ver el certificado' : 'Probar el bautizo'}</a>
+        <button type="button" class="btn btn-ghost btn-small" data-dl="${o.id}">Descargar la obra</button>
+        <a class="btn btn-ghost btn-small" href="${obraLocalLink(o.id)}">${o.serial ? 'Ver el certificado' : 'Probar el bautizo'}</a>
         ${o.serial ? '' : `<button type="button" class="btn btn-ghost btn-small" data-del="${o.id}">Eliminar</button>`}
       </div>
     </li>`).join('');
@@ -58,11 +59,21 @@ function renderHome() {
 $('#obraList').addEventListener('click', async (e) => {
   const copy = e.target.closest('[data-copy]'); const del = e.target.closest('[data-del]');
   if (copy) { await copyText(obraLink(copy.dataset.copy), copy); }
+  const dl = e.target.closest('[data-dl]'); if (dl) downloadObra(dl.dataset.dl);
   if (del) {
     if (del.dataset.armed) { deleteObra(del.dataset.del); renderHome(); }
     else { del.dataset.armed = '1'; del.textContent = 'Toca otra vez para eliminar'; }
   }
 });
+// The piece as one file (data + texture): what gets published so its link works on every phone.
+function downloadObra(id) {
+  const o = getObra(id); if (!o) return;
+  const { serial, name, ...record } = o; // the local baptism test, if any, is not part of the piece
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(record)], { type: 'application/json' }));
+  a.download = `${id}.json`; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
 async function copyText(text, btn) {
   const was = btn.textContent;
   try { await navigator.clipboard.writeText(text); btn.textContent = 'Enlace copiado'; }
@@ -325,7 +336,8 @@ $('#certBtn').addEventListener('click', () => {
   const link = obraLink(obra.id);
   $('#doneTitle').textContent = obra.title;
   $('#doneLink').value = link;
-  $('#openBap').href = link;
+  $('#openBap').href = obraLocalLink(obra.id);
+  $('#dlBtn').onclick = () => downloadObra(obra.id);
   $('#copyBtn').onclick = () => { $('#doneLink').select(); copyText(link, $('#copyBtn')); };
   $('#doneLink').onfocus = () => $('#doneLink').select();
   goStep(4);

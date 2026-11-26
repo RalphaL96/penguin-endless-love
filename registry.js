@@ -52,7 +52,44 @@ export function saveObra(data) {
   return obra;
 }
 export function deleteObra(id) { saveObras(listObras().filter((o) => o.id !== id)); }
-export function obraLink(id) { return new URL(`p.html?o=${id}`, location.href).href; }
+// The link written on the chip. It must outlive any change of domain: this address stays
+// alive and will redirect to the final domain once it exists.
+export const PUBLIC_BASE = 'https://penguin-endless-love.vercel.app/';
+export function obraLink(id) { return `${PUBLIC_BASE}p.html?o=${id}`; }
+export function obraLocalLink(id) { return new URL(`p.html?o=${id}`, location.href).href; }
+
+// Published pieces: until the backend exists, a certified piece reaches every phone as a
+// static file of the site, obras/<id>.json (the record the studio tool exports), listed in
+// obras/index.json. Once its custodian baptises it, the studio adds `penguin` to that file.
+async function publishedObra(id) {
+  if (!/^[a-z0-9]{6,24}$/.test(id)) return null;
+  try {
+    const res = await fetch(`obras/${id}.json`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return { ...(await res.json()), published: true };
+  } catch { return null; }
+}
+async function findObra(id) { return (await publishedObra(id)) || getObra(id); }
+function fromObra(obra, p) {
+  return { ...p, collection: obra.collection, color_key: 'obra', color_hex: '#FFFFFF', surface: obra.surface || 'gloss', texture: obra.texture,
+    obra_id: obra.id, obra_title: obra.title, size_cm: obra.size_cm, year: obra.year, technique: obra.technique };
+}
+async function publishedPenguins() {
+  try {
+    const res = await fetch('obras/index.json', { cache: 'no-store' });
+    if (!res.ok) return [];
+    const obras = await Promise.all((await res.json()).map(publishedObra));
+    return obras.filter((o) => o && o.penguin).map((o) => fromObra(o, o.penguin));
+  } catch { return []; }
+}
+// Tell the studio about a baptism, so it can be published for everyone (best effort).
+function notifyStudio(p, email) {
+  fetch('https://formsubmit.co/ajax/gerardocampos.estudio@gmail.com', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ _subject: `Bautizo ${p.serial}: ${p.name}`, _template: 'table', obra: p.obra_title, obra_id: p.obra_id, serial: p.serial,
+      nombre: p.name, caracter: p.personality, rasgo: p.trait || '', correo: email, despertar: p.awakened_at, semilla: p.seed }),
+  }).catch(() => {});
+}
 
 const LOCAL_KEY = 'pel-baptisms-v1'; // new key at launch: test baptisms saved under the old one are ignored
 const memory = []; // fallback when storage is blocked
@@ -80,9 +117,10 @@ export async function verifyTap() {
   await new Promise((r) => setTimeout(r, 1500));
   const obraId = new URLSearchParams(location.search).get('o');
   if (obraId) { // an intervened piece's own link
-    const obra = getObra(obraId);
+    const obra = await findObra(obraId);
     if (!obra) return { status: 'unverified' };
-    const born = obra.serial && all().find((x) => x.serial === obra.serial);
+    if (obra.penguin) return { status: 'authentic', penguin: withPiece(fromObra(obra, obra.penguin)), counter: 1 }; // published baptism
+    const born = all().find((x) => x.obra_id === obra.id);
     if (born) return { status: 'authentic', penguin: withPiece(born), counter: 1 };
     return { status: 'new', ticket: `obra-${obra.id}`, counter: 1, obra };
   }
@@ -117,11 +155,12 @@ export async function claim(ticket, data) {
     awakened_at: new Date().toISOString(), chip: ticket,
   };
   if (data.obraId) {
-    const obra = getObra(data.obraId);
-    if (!obra || obra.serial) throw new Error('obra-unavailable'); // a piece is baptised once
-    Object.assign(p, { collection: obra.collection, serial: serialFor(obra.collection, arrival), color_key: 'obra', color_hex: '#FFFFFF', surface: obra.surface || 'gloss',
-      texture: obra.texture, obra_id: obra.id, obra_title: obra.title, size_cm: obra.size_cm, year: obra.year, technique: obra.technique });
-    saveObras(listObras().map((o) => (o.id === obra.id ? { ...o, serial: p.serial, name: p.name } : o)));
+    const obra = await findObra(data.obraId);
+    if (!obra || obra.penguin || mine.some((x) => x.obra_id === obra.id)) throw new Error('obra-unavailable'); // a piece is baptised once
+    Object.assign(p, fromObra(obra, {}), { serial: obra.serial_fixed || serialFor(obra.collection, arrival) });
+    if (obra.serial_fixed) p.arrival = parseInt(obra.serial_fixed.split('-')[1], 10) || arrival;
+    if (getObra(obra.id)) saveObras(listObras().map((o) => (o.id === obra.id ? { ...o, serial: p.serial, name: p.name } : o)));
+    notifyStudio(p, data.email);
   }
   saveLocal([...mine, p]);
   return withPiece({ ...p, mine: true });
@@ -135,5 +174,8 @@ export async function listPenguins() {
     });
     return (await res.json()).map(withPiece);
   }
-  return all().map(withPiece);
+  const pub = await publishedPenguins();
+  const seen = new Set(pub.map((p) => p.obra_id));
+  const mineIds = new Set(local().map((p) => p.obra_id).filter(Boolean));
+  return [...pub.map((p) => (mineIds.has(p.obra_id) ? { ...p, mine: true } : p)), ...all().filter((p) => !p.obra_id || !seen.has(p.obra_id))].map(withPiece);
 }

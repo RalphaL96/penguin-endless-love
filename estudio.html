@@ -37,7 +37,7 @@
     <button type="button" class="btn btn-solid" id="newBtn">Certificar una obra</button>
     <ul class="obra-list" id="obraList"></ul>
     <p class="help" id="emptyNote" hidden>Todavía no hay obras certificadas.</p>
-    <p class="help studio-demo">Modo demostración: las obras se guardan solo en este navegador.</p>
+    <p class="help studio-demo">Las obras se guardan en este navegador hasta publicarlas: descarga su archivo para publicar.</p>
   </section>
 
   <!-- WIZARD -->
@@ -154,6 +154,11 @@
         <label class="summary-label" for="doneLink">Enlace del certificado digital</label>
         <input class="link-field" id="doneLink" type="text" readonly>
         <button type="button" class="btn btn-solid btn-wide" id="copyBtn">Copiar el enlace</button>
+      </div>
+      <div class="summary">
+        <p class="summary-label">Publicar la obra</p>
+        <p class="help">Para que el enlace funcione en cualquier teléfono, la obra debe publicarse: descarga su archivo y envíalo para publicarlo.</p>
+        <button type="button" class="btn btn-ghost btn-wide" id="dlBtn">Descargar la obra</button>
       </div>
       <div class="studio-actions">
         <a class="btn btn-ghost" id="openBap" href="p.html">Probar el bautizo</a>
