@@ -12,14 +12,16 @@ const WALK_SPEED = 0.42;              // units per second
 const SLIDE_SPEED = 1.0;
 
 // ---------- the island day ----------
-export const DAY = 3600;              // one island day lasts an hour, so a visit can see all of it
-const NIGHT_START = 50 * 60;          // the huddle holds from here until the day ends
+export const DAY = 3 * 3600;          // one island day lasts three hours
+const NIGHT_START = 150 * 60;         // the huddle holds from here until the day ends (30 minutes)
+const DUSK = 12 * 60;                 // the light fades during this long before night
+const DAWN = [4.5 * 60, 3 * 60];      // the light returns from this long before the day ends to this long after
 const GATHER = 40;                    // seconds to walk to the huddle before night
 const DAWN_EXIT = 40;                 // seconds to walk back to one's own routine at dawn
 const STEP = 40;                      // the huddle shuffles one place every STEP seconds
 const LAST_STEP = Math.floor((DAY - NIGHT_START) / STEP) - 1;
 const HUDDLE_GAP = 0.7;               // distance between neighbours in the huddle
-const SEA_TRIPS = [12 * 60, 32 * 60]; // seconds into the day when the colony goes swimming
+const SEA_TRIPS = [20, 45, 70, 95, 120].map((m) => m * 60); // seconds into the day when the colony goes swimming
 const SEA_LEN = 175;                  // a whole trip: file, shore, lap, back to the routine
 const ASM = 40;                       // seconds to line up
 const FILE_V = 0.55;                  // marching speed
@@ -62,7 +64,7 @@ function gap(a, b) { return Math.hypot(b.x - a.x, b.z - a.z); }
 /** How much daylight there is at time t: light 1 = day, 0 = night; warm peaks at dusk and dawn. */
 export function daylight(t) {
   const s = ((t % DAY) + DAY) % DAY;
-  const night = s < 60 ? 1 - smooth(-90, 60, s) : s < 58.5 * 60 ? smooth(46 * 60, NIGHT_START, s) : 1 - smooth(58.5 * 60, DAY + 60, s);
+  const night = s < DAWN[1] ? 1 - smooth(-DAWN[0], DAWN[1], s) : s < DAY - DAWN[0] ? smooth(NIGHT_START - DUSK, NIGHT_START, s) : 1 - smooth(DAY - DAWN[0], DAY + DAWN[1], s);
   return { light: 1 - night, warm: 4 * night * (1 - night) };
 }
 

@@ -18,12 +18,12 @@ Herramienta para que el estudio certifique una obra pintada a mano: `estudio.htm
 - La cámara necesita HTTPS (Vercel lo da). Separación de fondo: pensada para fondo liso; un fondo complejo deja la foto «Sin recorte» y se usa alineada con la silueta.
 
 ## La isla · vida de colonia (fase 1) · 27/11/2026
-La isla vive un día cada hora (`DAY` en `life.js`), igual para todos los visitantes:
+La isla vive un día cada tres horas (`DAY` en `life.js`), igual para todos los visitantes:
 - **Minuto 0:** amanece y cada pingüino vuelve a su rutina.
-- **Minutos 12 y 32:** la colonia va en fila al mar, duda en la orilla, el más valiente se lanza y los demás lo siguen; dan una vuelta a la isla nadando con saltos y salen del agua.
-- **Minuto 46 a 50:** atardece. **Minuto 50 a 60:** noche; se juntan en el centro y cada 40 s dan un paso en ola.
+- **Minutos 20, 45, 70, 95 y 120:** la colonia va en fila al mar, duda en la orilla, el más valiente se lanza y los demás lo siguen; dan una vuelta a la isla nadando con saltos y salen del agua.
+- **Minuto 138 a 150:** atardece. **Minuto 150 a 180:** noche; se juntan en el centro y cada 40 s dan un paso en ola.
 - Parejas: citas en las que los dos llegan al mismo punto y se saludan a la vez. Visitas: ahora van a donde está de verdad el otro.
 - Recién llegado (primeras 24 h): los demás lo visitan más. Su custodio lo ve llegar nadando la primera vez (`?llegada=1` lo repite).
 - Tocar un pingüino: gira hacia el visitante y saluda; al segundo toque, salta. Solo lo ve quien toca.
 
-Ensayo, solo para quien abre el enlace (no guarda nada): `mundo.html?ensayo=12` añade pingüinos de muestra, `&minuto=49` empieza en ese minuto del día, `&ritmo=8` acelera el tiempo.
+Ensayo, solo para quien abre el enlace (no guarda nada): `mundo.html?ensayo=12` añade pingüinos de muestra, `&minuto=149` empieza en ese minuto del día (0 a 180), `&ritmo=8` acelera el tiempo.

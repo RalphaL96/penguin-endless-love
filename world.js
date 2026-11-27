@@ -21,7 +21,7 @@ function setLang(l) { try { localStorage.setItem('pel-lang', l); } catch { /* st
 
 // ---------- island clock ----------
 // Everyone shares the same clock. For rehearsals the address can shift or speed it up, for this visitor only:
-//   mundo.html?minuto=49   start at that minute of the island day (0-60)
+//   mundo.html?minuto=149  start at that minute of the island day (0-180)
 //   mundo.html?ritmo=8     time runs 8 times faster
 //   mundo.html?ensayo=12   add 12 sample penguins (they are not saved anywhere)
 const QUERY = new URLSearchParams(location.search);
