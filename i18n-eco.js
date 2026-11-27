@@ -98,6 +98,7 @@ export const ECO = {
     'act.swim': 'Nadando alrededor de la isla',
     'act.ashore': 'Recién salido del agua',
     'act.arrive': 'Llegando a la isla',
+    'act.call': 'Llamando a la colonia',
     'world.rehearsal': 'ensayo',
   },
   en: {
@@ -198,6 +199,7 @@ export const ECO = {
     'act.swim': 'Swimming around the island',
     'act.ashore': 'Just out of the water',
     'act.arrive': 'Arriving on the island',
+    'act.call': 'Calling to the colony',
     'world.rehearsal': 'rehearsal',
   },
 };

@@ -25,7 +25,8 @@ const SEA_TRIPS = [20, 45, 70, 95, 120].map((m) => m * 60); // seconds into the 
 const SEA_LEN = 175;                  // a whole trip: file, shore, lap, back to the routine
 const ASM = 40;                       // seconds to line up
 const FILE_V = 0.55;                  // marching speed
-const DIVE = 0.9, LAP = 44, LEAP = 0.8, GETUP = 1.4, HOP = 1.25;
+const DIVE = 0.9, LAP = 44, LEAP = 0.8, GETUP = 1.4, SHAKE = 1.75;
+const CALL = 4;                       // length of the call (the Ecstatic clip)
 const SWIM_R = ISLAND_R + 1.4;        // where they enter and leave the water
 export const SEA_Y = -0.35;           // the surface of the sea
 const DEEP = -1.0;                    // they swim under the surface and only break it to leap
@@ -150,7 +151,7 @@ export class Colony {
         const kf = Math.floor(((k + 0.5) * SLOT - p.phase + friend.phase) / SLOT);
         face = this.activity(friend, kf, true).target;
         const a = u(7) * Math.PI * 2;
-        target = { x: face.x + Math.sin(a) * 0.55, z: face.z + Math.cos(a) * 0.55 };
+        target = { x: face.x + Math.sin(a) * 0.85, z: face.z + Math.cos(a) * 0.85 };
         const r = Math.hypot(target.x, target.z), max = ISLAND_R * 0.95;
         if (r > max) { target.x *= max / r; target.z *= max / r; }
       }
@@ -218,12 +219,16 @@ export class Colony {
     let heading = dist > 0.01 ? Math.atan2(dx, dz) : p.home;
     if (a.type === 'sea') heading = a.outward;
     else if (a.type === 'visit' && a.face) heading = Math.atan2(a.face.x - a.target.x, a.face.z - a.target.z);
-    else if (a.type === 'walk' || a.type === 'explore') heading += Math.sin(t * 0.4 + p.seed) * 0.7; // looking around
+    // now and then a penguin on its own stretches to the sky and calls; the ones nearby fall silent and listen
+    const since = local - travel;
+    const calling = (a.type === 'walk' || a.type === 'explore' || a.type === 'sea') && rand(p.seed, k, 20) < 0.22 && since >= 3 && since < 3 + CALL;
+    if (!calling && (a.type === 'walk' || a.type === 'explore')) heading += Math.sin(t * 0.4 + p.seed) * 0.7; // looking around
     // after a slide the penguin gets up and looks around
-    const act = a.type === 'slide' ? 'walk' : a.type;
+    const act = calling ? 'call' : a.type === 'slide' ? 'walk' : a.type;
     return {
       x: a.target.x, z: a.target.z, heading,
       pose: act === 'rest' ? 'lie' : 'stand', moving: false, sliding: false, act, friend: a.friend, ...timing,
+      date: a.date, first: !!p.first, ...(calling ? { anim: ['Ecstatic', since - 3] } : null),
     };
   }
 
@@ -316,7 +321,7 @@ export class Colony {
     const bold = [...info.values()].sort((a, b) => a.nerve - b.nerve);
     bold.forEach((m, order) => {
       m.tJump = arrived + 5 + (order ? Math.min(16, 1.8 + (order - 1) * 1.4) + m.nerve * 0.3 : 0);
-      m.tDone = Math.min(SEA_LEN - 20, m.tJump + DIVE + LAP + LEAP + GETUP + HOP + 1);
+      m.tDone = Math.min(SEA_LEN - 20, m.tJump + DIVE + LAP + LEAP + GETUP + SHAKE + 1);
     });
     const trip = { A, sign, info };
     this.trips.set(key, trip);
@@ -345,7 +350,7 @@ export class Colony {
       };
     }
     x -= DIVE;
-    const glide = ['Slide', SLIDE_DOWN + (t % SLIDE_HOLD)];
+    const glide = ['Swim', t + (p.seed % 5) * 0.2, true];
     if (x < LAP) {                                             // a lap around the island, leaping like a dolphin
       const a = m.ang + trip.sign * Math.PI * 2 * (x / LAP);
       const at = polar(SWIM_R + 1.7 * smooth(0, 3, x) * (1 - smooth(LAP - 3, LAP, x)), a);
@@ -370,7 +375,7 @@ export class Colony {
     x -= LEAP;
     if (x < GETUP) return this.standing(p, m.shore, m.ang + Math.PI, 'ashore', ['Slide', SLIDE_UP + x]);
     x -= GETUP;
-    if (x < HOP) return this.standing(p, m.shore, m.ang + Math.PI, 'ashore', ['Hop', x]);
+    if (x < SHAKE) return this.standing(p, m.shore, m.ang + Math.PI, 'ashore', ['Shake', x]); // shaking the water off
     if (e < m.tDone) return this.standing(p, m.shore, m.ang + Math.PI, 'ashore');
     return this.leave(p, t, T0 + m.tDone, T0 + SEA_LEN, m.shore);
   }

@@ -30,3 +30,9 @@ Ensayo, solo para quien abre el enlace (no guarda nada): `mundo.html?ensayo=12` 
 
 ### El mar (27/11/2026)
 Un solo material ligero en `world.js`, sin pasadas extra de render (no usa `Water.js` ni `Water2.js`, que redibujan la escena para el reflejo): olas por vértices, facetas como el hielo, agua translúcida cerca de la isla, línea de espuma en la orilla y anillos de espuma donde un pingüino rompe la superficie. Los pingüinos nadan bajo el agua y solo salen para saltar.
+
+## La isla · fase 2: clips nuevos (27/11/2026)
+Seis clips más en los dos rigs (`penguin-standing-rig.glb`, `penguin-rest-rig.glb`), con los mismos nombres en ambos: **Ecstatic** (4 s), **Bow** (2,5 s), **Preen** (4 s), **Shake** (1,75 s), **Peck** (2,5 s; el pico toca el suelo a los 0,85 s) y **Swim** (1 s, en bucle).
+- Fuente: `Pinguin 3D PEL - rig animaciones fase2.blend` y `Pinguin Summer PEL - rig animaciones fase2.blend`. Cada archivo lleva dentro el script que genera sus clips (`PEL_clips_fase2.py`, `PES_clips_fase2.py`): se cambian los números y se vuelve a ejecutar.
+- Los `.glb` de la web conservan su malla y sus UV; solo se les añadieron las animaciones exportadas desde Blender.
+- En la isla: nadan con Swim y se sacuden al salir; se acicalan cada tanto; un pingüino solo a veces llama (Ecstatic) y los que están a menos de 3,2 unidades se callan y lo miran; en una cita la pareja se inclina, llama a la vez, uno recoge una piedra, la deja ante el otro y el otro se inclina.

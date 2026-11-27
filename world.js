@@ -266,6 +266,7 @@ function applyDaylight(now) {
 // ---------- penguins ----------
 const shadowTex = contactShadowTexture();
 const heartMat = new THREE.MeshPhysicalMaterial(FINISHES.heart);
+const stoneMat = new THREE.MeshStandardMaterial({ color: 0x59636c, roughness: 0.85, flatShading: true });
 const finishMats = new Map();
 function materialFor(piece) {
   if (piece.texture) { // intervened piece: its own paint, baked from the studio's photos
@@ -316,7 +317,7 @@ async function build() {
       a.play(); a.paused = true; a.setEffectiveWeight(0);
       actions[clip.name] = a;
     }
-    return { root, mesh, mixer, actions, weights: {} };
+    return { root, mesh, mixer, actions, weights: {}, head: root.getObjectByName('head') };
   }
   for (const p of list) {
     const piece = p.piece || {};
@@ -347,6 +348,15 @@ async function build() {
     rest.mesh.userData.bird = bird;
     birds.push(bird);
     if (p.serial === wanted || (!wanted && p.mine)) mine = bird;
+  }
+  // the pebble one partner brings to the other on a date
+  for (const b of birds) {
+    if (!b.p.first) continue;
+    const m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.045, 0), stoneMat);
+    m.scale.set(1, 0.7, 0.85);
+    m.visible = false;
+    scene.add(m);
+    b.stone = m;
   }
   // a small golden heart rises between partners when they are together
   for (const b of birds) {
@@ -447,7 +457,7 @@ function startArrival(b) {
   const a = Math.hypot(st.x, st.z) > 0.5 ? Math.atan2(st.x, st.z) : cam.yaw;
   b.arrival = { t0: performance.now() / 1000, a };
 }
-const ARR = { swim: 5, leap: 0.8, up: 1.4, hop: 1.25, wave: 2.5 };
+const ARR = { swim: 5, leap: 0.8, up: 1.4, hop: 1.75, wave: 2.5 };
 function arrivalState(b, st) {
   const A = b.arrival, e = performance.now() / 1000 - A.t0, dir = { x: Math.sin(A.a), z: Math.cos(A.a) };
   const shore = ISLAND_R * 0.93, sea = ISLAND_R + 1.4, inward = A.a + Math.PI;
@@ -456,17 +466,17 @@ function arrivalState(b, st) {
   let x = e;
   if (x < ARR.swim) {
     const f = x / ARR.swim, ph = x * 1.9 - 0.6, u = Math.sin(ph), out = u > 0.45 ? ((u - 0.45) / 0.55) ** 2 * (3 - 2 * (u - 0.45) / 0.55) : 0;
-    return { ...o, ...at(sea + (1 - f) * 7), y: -1 + out * 1.3 * (1 - f * f), pitch: -Math.cos(ph) * (0.15 + 0.65 * Math.max(0, u)), wet: true, moving: true, anim: ['Slide', SLIDE_DOWN + (x % SLIDE_HOLD)] };
+    return { ...o, ...at(sea + (1 - f) * 7), y: -1 + out * 1.3 * (1 - f * f), pitch: -Math.cos(ph) * (0.15 + 0.65 * Math.max(0, u)), wet: true, moving: true, anim: ['Swim', x, true] };
   }
   x -= ARR.swim;
   if (x < ARR.leap) {
     const f = x / ARR.leap;
-    return { ...o, ...at(sea + (shore - sea) * f), y: -1 * (1 - f) * (1 - f) + Math.sin(Math.PI * f) * 0.6, pitch: -1.0 + f * 1.0, wet: true, anim: ['Slide', SLIDE_DOWN] };
+    return { ...o, ...at(sea + (shore - sea) * f), y: -1 * (1 - f) * (1 - f) + Math.sin(Math.PI * f) * 0.6, pitch: -1.0 + f * 1.0, wet: true, anim: ['Swim', x, true] };
   }
   x -= ARR.leap;
   if (x < ARR.up) return { ...o, ...at(shore), anim: ['Slide', SLIDE_UP + x] };
   x -= ARR.up;
-  if (x < ARR.hop) return { ...o, ...at(shore), anim: ['Hop', x] };
+  if (x < ARR.hop) return { ...o, ...at(shore), anim: ['Shake', x] };
   x -= ARR.hop;
   const toCam = Math.atan2(camera.position.x - dir.x * shore, camera.position.z - dir.z * shore);
   if (x < ARR.wave) return { ...o, ...at(shore), heading: toCam, anim: ['Wave', x] };
@@ -509,12 +519,16 @@ $('#allBtn').addEventListener('click', () => { setFollow(null); cam.goal = { tx:
 // ---------- choreography ----------
 // Which clip a penguin plays and at what time. Everything comes from the shared
 // island clock (life.js), so every visitor sees the same frame.
-const CLIP_LEN = { Idle: 2, Walk: 1, Wave: 2.5, Look: 5, Sleep: 4, Lean: 3, Hop: 1.25, Slide: 4 };
+const CLIP_LEN = { Idle: 2, Walk: 1, Wave: 2.5, Look: 5, Sleep: 4, Lean: 3, Hop: 1.25, Slide: 4, Ecstatic: 4, Bow: 2.5, Preen: 4, Shake: 1.75, Peck: 2.5, Swim: 1 };
+// A date, in seconds since both partners arrived: they bow, call together, one brings a pebble and lays it down, the other bows.
+const DATE = { bow: 2.5, call: 6.5, pick: 9, give: 11.5, thanks: 12.1, beak: 0.85 };
 function loop(name, t) { return [name, ((t % CLIP_LEN[name]) + CLIP_LEN[name]) % CLIP_LEN[name]]; }
 function resting(p, now) {
   const t = now + (p.seed % 97);
   if (p.personality === 'dreamer') return loop('Sleep', t);
   if (p.personality === 'playful') { const c = t % 7; if (c < CLIP_LEN.Hop) return ['Hop', c]; }
+  const c = t % 19;                                         // preening every so often
+  if (c < CLIP_LEN.Preen) return ['Preen', c];
   return loop('Idle', t);
 }
 function choreo(p, st, now) {
@@ -529,6 +543,16 @@ function choreo(p, st, now) {
   const since = st.sync ?? st.elapsed - st.travel;          // seconds since arriving (on a date: since both arrived)
   if (since < 0) return loop('Look', now + (p.seed % 89));  // waiting for the other one
   if (st.kind === 'slide' && since < CLIP_LEN.Slide - SLIDE_UP) return ['Slide', SLIDE_UP + since]; // getting up
+  if (st.act === 'visit' && st.date) {
+    if (since < DATE.bow) return ['Bow', since];
+    if (since < DATE.call) return ['Ecstatic', since - DATE.bow];
+    if (since < DATE.thanks) {
+      if (st.first) return since < DATE.pick ? ['Peck', since - DATE.call] : since < DATE.give ? ['Peck', since - DATE.pick] : loop('Idle', now);
+      return since < DATE.pick + 0.6 ? loop('Idle', now) : ['Bow', since - DATE.pick - 0.6];
+    }
+    const c = (since - DATE.thanks) % 8;
+    return c < CLIP_LEN.Lean ? ['Lean', c] : resting(p, now);
+  }
   if (st.act === 'visit' && st.friend) {
     if (since < CLIP_LEN.Wave) return ['Wave', since];      // hello on arrival
     const c = (since - CLIP_LEN.Wave) % 8;
@@ -543,6 +567,7 @@ function choreo(p, st, now) {
 // The same clip names exist on both rigs: standing (Walk = waddle) and Summer (Walk = belly crawl).
 function animate(b, r, dt, now) {
   let want = choreo(b.p, b.state, now);
+  if (b.listen && !b.state.anim && !b.state.moving) want = loop('Idle', now); // silent while a neighbour calls
   if (b.react) {                                            // answering this visitor's touch
     const e = performance.now() / 1000 - b.react.t0, st = b.state;
     if (e < CLIP_LEN[b.react.clip] && !st.moving && !st.sliding && !st.wet) want = [b.react.clip, e];
@@ -608,7 +633,8 @@ function frame() {
       b.under = under;
       // turn smoothly toward the heading (shortest way round); a touched penguin turns to the visitor
       const reacting = b.react && performance.now() / 1000 - b.react.t0 < CLIP_LEN[b.react.clip] && !st.moving && !st.wet;
-      const goal = reacting ? Math.atan2(camera.position.x - st.x, camera.position.z - st.z) : st.heading;
+      const hears = b.listen && !st.moving && !st.wet && !st.anim ? b.listen.state : null;
+      const goal = reacting ? Math.atan2(camera.position.x - st.x, camera.position.z - st.z) : hears ? Math.atan2(hears.x - st.x, hears.z - st.z) : st.heading;
       let d = goal - b.heading;
       d = Math.atan2(Math.sin(d), Math.cos(d));
       b.heading += d * ease(st.wet ? 12 : st.moving || reacting ? 6 : 2.5);
@@ -617,6 +643,33 @@ function frame() {
       if (b.stand) b.stand.mesh.visible = !reclined;
       b.rest.mesh.visible = reclined;
       animate(b, reclined ? b.rest : b.stand, dt, now);   // waddle, crawl, slide and gestures live in the rigs' clips
+    }
+    // a call silences the neighbours: they stop what they were doing, turn and listen
+    for (const b of birds) b.listen = null;
+    for (const c of birds) {
+      if (c.state.act !== 'call') continue;
+      for (const b of birds) {
+        const st = b.state;
+        if (b === c || st.moving || st.sliding || st.wet || st.anim || st.pose === 'lie' || st.act === 'visit') continue;
+        if (Math.hypot(st.x - c.state.x, st.z - c.state.z) < 3.2) b.listen = c;
+      }
+    }
+    // the pebble: in the giver's beak, then on the ice between the two
+    for (const b of birds) {
+      if (!b.stone) continue;
+      const st = b.state, s = st.date && !st.moving ? st.sync : -1;
+      const other = birds.find((o) => o.p.serial === b.p.partner);
+      b.stone.visible = s >= DATE.call + DATE.beak && !!other;
+      if (!b.stone.visible) continue;
+      if (s < DATE.pick + DATE.beak) {
+        const r = b.summer || st.pose === 'lie' ? b.rest : b.stand;
+        scene.updateMatrixWorld();
+        v.set(0, 0.026, 0.006).applyMatrix4(r.head.matrixWorld);   // the tip of the beak, in the head bone's space
+        b.stone.position.copy(v);
+      } else {
+        const k = b.summer ? 0.34 : 0.3, f = { x: Math.sin(b.heading), z: Math.cos(b.heading) };
+        b.stone.position.set(st.x + f.x * k, 0.03, st.z + f.z * k);
+      }
     }
     // love hearts between partners spending time together
     for (const b of birds) {
