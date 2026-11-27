@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { FINISHES, ENVS, buildEnvironment, loadModel, loadRig, contactShadowTexture } from './stage.js';
-import { Colony, ISLAND_R, rand } from './life.js';
+import { Colony, ISLAND_R, DAY, SLIDE_DOWN, SLIDE_HOLD, SLIDE_UP, rand, daylight } from './life.js';
 import { listPenguins } from './registry.js';
 import { STRINGS } from './i18n.js';
 import { ECO } from './i18n-eco.js';
@@ -19,6 +19,35 @@ function t(key, vars) {
 function getLang() { try { return localStorage.getItem('pel-lang'); } catch { return null; } }
 function setLang(l) { try { localStorage.setItem('pel-lang', l); } catch { /* storage unavailable */ } }
 
+// ---------- island clock ----------
+// Everyone shares the same clock. For rehearsals the address can shift or speed it up, for this visitor only:
+//   mundo.html?minuto=49   start at that minute of the island day (0-60)
+//   mundo.html?ritmo=8     time runs 8 times faster
+//   mundo.html?ensayo=12   add 12 sample penguins (they are not saved anywhere)
+const QUERY = new URLSearchParams(location.search);
+const RATE = Math.max(0.1, Math.min(60, parseFloat(QUERY.get('ritmo')) || 1));
+const T_START = Date.now() / 1000;
+const T_SHIFT = QUERY.has('minuto') ? (parseFloat(QUERY.get('minuto')) || 0) * 60 - (T_START % DAY) : 0;
+const islandNow = () => T_START + T_SHIFT + (Date.now() / 1000 - T_START) * RATE;
+const REHEARSAL = Math.max(0, Math.min(60, parseInt(QUERY.get('ensayo'), 10) || 0));
+function sampleColony(n) {
+  const names = ['Luna', 'Nilo', 'Mar', 'Tomás', 'Alba', 'Bruno', 'Cielo', 'Dante', 'Eva', 'Félix', 'Gala', 'Hugo', 'Iris', 'Joel', 'Kira', 'León', 'Maia', 'Noa', 'Olmo', 'Paz'];
+  const chars = ['tender', 'explorer', 'dreamer', 'curious', 'calm', 'playful'];
+  const finishes = ['silver', 'gold', 'onyx', 'emerald', 'ruby'];
+  const list = [];
+  for (let i = 0; i < n; i++) {
+    const summer = i % 5 === 4;
+    list.push({
+      serial: `ENSAYO-${String(i + 1).padStart(2, '0')}`, arrival: 9000 + i, name: names[i % names.length] + (i >= names.length ? ` ${Math.floor(i / names.length) + 1}` : ''),
+      personality: chars[i % 6], trait: i % 3 ? chars[(i + 2) % 6] : null, seed: 7919 * (i + 3), partner: null, rehearsal: true,
+      awakened_at: new Date(i === n - 1 ? Date.now() - 600000 : Date.UTC(2026, 8, 1 + i)).toISOString(), // the last one has just arrived
+      piece: { collection: summer ? 'summer' : 'love', finish: finishes[i % 5], surface: i % 4 === 3 ? 'matte' : 'gloss', size_cm: [24, 48, 60, 14, 90][i % 5] },
+    });
+  }
+  for (let i = 0; i + 1 < n - 1 && i < 6; i += 3) { list[i].partner = list[i + 1].serial; list[i + 1].partner = list[i].serial; }
+  return list;
+}
+
 // ---------- renderer & scene ----------
 const canvas = $('#worldCanvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -34,24 +63,48 @@ scene.fog = new THREE.Fog(SKY.horizon, 28, 80);
 
 const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 300);
 
-// sky dome: vertical gradient, ignores fog
-{
-  const geo = new THREE.SphereGeometry(150, 32, 16);
-  const col = [], top = new THREE.Color(SKY.top), mid = new THREE.Color(SKY.mid), hor = new THREE.Color(SKY.horizon);
-  const pos = geo.attributes.position;
+// sky dome: vertical gradient, ignores fog. Its colours follow the island day.
+const NIGHT_SKY = { top: 0x04070d, mid: 0x0c1724, horizon: 0x1a2a3c };
+const DUSK = { mid: 0xb98a86, horizon: 0xf2a56c };
+const skyGeo = new THREE.SphereGeometry(150, 32, 16);
+skyGeo.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(skyGeo.attributes.position.count * 3), 3));
+scene.add(new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false })));
+const skyCol = { top: new THREE.Color(), mid: new THREE.Color(), hor: new THREE.Color() };
+function paintSky(light, warm) {
+  const mix = (day, night) => new THREE.Color(night).lerp(new THREE.Color(day), light);
+  skyCol.top.copy(mix(SKY.top, NIGHT_SKY.top));
+  skyCol.mid.copy(mix(SKY.mid, NIGHT_SKY.mid)).lerp(new THREE.Color(DUSK.mid), warm * 0.45);
+  skyCol.hor.copy(mix(SKY.horizon, NIGHT_SKY.horizon)).lerp(new THREE.Color(DUSK.horizon), warm * 0.8);
+  const pos = skyGeo.attributes.position, col = skyGeo.attributes.color, c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
     const y = pos.getY(i) / 150;
-    const c = y > 0.18 ? mid.clone().lerp(top, Math.min(1, (y - 0.18) / 0.6)) : hor.clone().lerp(mid, Math.max(0, y / 0.18));
-    col.push(c.r, c.g, c.b);
+    if (y > 0.18) c.copy(skyCol.mid).lerp(skyCol.top, Math.min(1, (y - 0.18) / 0.6)); else c.copy(skyCol.hor).lerp(skyCol.mid, Math.max(0, y / 0.18));
+    col.setXYZ(i, c.r, c.g, c.b);
   }
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-  scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false })));
+  col.needsUpdate = true;
+  scene.fog.color.copy(skyCol.hor);
+}
+// stars: only at night
+const starMat = new THREE.PointsMaterial({ color: 0xdfe8ff, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false });
+{
+  const pts = [];
+  for (let i = 0; i < 420; i++) {
+    const a = rand(31, i, 1) * Math.PI * 2, h = 0.12 + rand(31, i, 2) * 0.88, r = Math.sqrt(1 - h * h);
+    pts.push(Math.sin(a) * r * 140, h * 140, Math.cos(a) * r * 140);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  scene.add(new THREE.Points(g, starMat));
 }
 
-scene.add(new THREE.HemisphereLight(0xdfe8ef, 0x2c3a46, 0.35));
+const hemi = new THREE.HemisphereLight(0xdfe8ef, 0x2c3a46, 0.35);
+scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffdcb0, 1.2);
 sun.position.set(-12, 9, -8);
 scene.add(sun);
+const moon = new THREE.DirectionalLight(0x9db8ff, 0);
+moon.position.set(9, 12, 6);
+scene.add(moon);
 
 // ---------- the island ----------
 const iceMat = new THREE.MeshStandardMaterial({ color: 0xd3dee6, roughness: 0.75, metalness: 0, flatShading: true });
@@ -121,13 +174,31 @@ for (let i = 0; i < 3; i++) {
   scene.add(m);
 }
 // sea
-const water = new THREE.Mesh(
-  new THREE.CircleGeometry(160, 64),
-  new THREE.MeshStandardMaterial({ color: 0x1e3140, roughness: 0.18, metalness: 0.3 })
-);
+const waterMat = new THREE.MeshStandardMaterial({ color: 0x1e3140, roughness: 0.18, metalness: 0.3 });
+const water = new THREE.Mesh(new THREE.CircleGeometry(160, 64), waterMat);
 water.rotation.x = -Math.PI / 2;
 water.position.y = -0.35;
 scene.add(water);
+
+// ---------- day and night ----------
+const SUN_DAY = new THREE.Color(0xffdcb0), SUN_LOW = new THREE.Color(0xff9a5a), WATER_DAY = new THREE.Color(0x1e3140), WATER_NIGHT = new THREE.Color(0x070d15);
+let litAt = -1;
+function applyDaylight(now) {
+  const { light, warm } = daylight(now);
+  const key = Math.round(light * 250) + Math.round(warm * 250) * 1000;
+  if (key === litAt) return;
+  litAt = key;
+  paintSky(light, warm);
+  sun.intensity = 1.2 * light;
+  sun.color.copy(SUN_DAY).lerp(SUN_LOW, warm);
+  moon.intensity = 0.5 * (1 - light);
+  hemi.intensity = 0.14 + 0.21 * light;
+  starMat.opacity = (1 - light) ** 2 * 0.9;
+  waterMat.color.copy(WATER_NIGHT).lerp(WATER_DAY, light);
+  renderer.toneMappingExposure = 0.5 + 0.42 * light;
+  const env = 0.3 + 0.7 * light;                       // reflections dim with the sky
+  for (const m of [iceMat, cliffMat, waterMat, heartMat, ...finishMats.values()]) m.envMapIntensity = env;
+}
 
 // ---------- penguins ----------
 const shadowTex = contactShadowTexture();
@@ -159,12 +230,13 @@ function materialFor(piece) {
   return m;
 }
 
-const countText = () => (birds.length === 0 ? t('world.none') : birds.length === 1 ? t('world.one') : t('world.count', { n: birds.length }));
+const countText = () => (REHEARSAL ? `${t('world.count', { n: birds.length })} · ${t('world.rehearsal')}` : birds.length === 0 ? t('world.none') : birds.length === 1 ? t('world.one') : t('world.count', { n: birds.length }));
 const H = 0.85; // standing height in world units
 let colony, birds = [], mine = null, selected = null, follow = null;
 
 async function build() {
   const [standRig, restRig, heart, list] = await Promise.all([loadRig('standRig'), loadRig('restRig'), loadModel('heart'), listPenguins()]);
+  if (REHEARSAL) list.push(...sampleColony(REHEARSAL));
   colony = new Colony(list);
   const wanted = location.hash.slice(1).toUpperCase();
   // both rigs are modelled at 10 cm scale facing +X: scale to world units and turn them to face +Z
@@ -207,7 +279,7 @@ async function build() {
     tag.addEventListener('click', () => select(bird));
     $('#tags').appendChild(tag);
 
-    const bird = { p, g, body, stand, rest, summer, tag, heading: 0, sizeK };
+    const bird = { p, g, body, stand, rest, summer, tag, sh, heading: 0, sizeK };
     if (stand) stand.mesh.userData.bird = bird;
     rest.mesh.userData.bird = bird;
     birds.push(bird);
@@ -227,11 +299,14 @@ async function build() {
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.47, 48), new THREE.MeshBasicMaterial({ color: 0xcdbba4, transparent: true, opacity: 0.85, depthWrite: false }));
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.035;
     mine.g.add(ring);
+    mine.ring = ring;
     $('#mineBtn').hidden = false;
     if (mine.p.piece?.collection === 'summer') document.body.dataset.collection = 'summer';
     select(mine);
     setFollow(mine);
   }
+  litAt = -1; // the penguins' materials now exist: light them too
+  if (mine) startArrival(mine);
   $('#count').textContent = countText();
   $('#loading').classList.add('done');
 }
@@ -284,7 +359,61 @@ function pick(e) {
   raycaster.setFromCamera(ndc, camera);
   const meshes = birds.flatMap((b) => [b.stand?.mesh, b.rest.mesh]).filter((m) => m && m.visible);
   const hit = raycaster.intersectObjects(meshes, false)[0];
-  if (hit) select(hit.object.userData.bird);
+  if (hit) { select(hit.object.userData.bird); greet(hit.object.userData.bird); }
+}
+// A touched penguin turns to the visitor and waves; touched again, it hops. Only this visitor sees it.
+function greet(b) {
+  const st = b.state;
+  if (REDUCED || !st || st.moving || st.sliding || st.wet || b.arrival) return;
+  const again = b.react && performance.now() / 1000 - b.react.t0 < 12;
+  b.react = { t0: performance.now() / 1000, clip: again && b.react.clip === 'Wave' ? 'Hop' : 'Wave' };
+}
+
+// ---------- arrival ----------
+// The first time its custodian sees a newly awakened penguin on the island, it comes in from the sea:
+// it swims to the shore, shoots out of the water, gets up, hops and waves, then walks to where the colony is.
+// (Only this visitor sees it. mundo.html?llegada=1 plays it again.)
+function startArrival(b) {
+  const key = `pel-arrived-${b.p.serial}`;
+  let seen = false;
+  try { seen = !!localStorage.getItem(key); } catch { /* storage unavailable */ }
+  const fresh = Date.now() - Date.parse(b.p.awakened_at) < 86400000;
+  if (REDUCED || (!QUERY.has('llegada') && (seen || !fresh))) return;
+  try { localStorage.setItem(key, '1'); } catch { /* storage unavailable */ }
+  const st = colony.state(b.p, islandNow());
+  const a = Math.hypot(st.x, st.z) > 0.5 ? Math.atan2(st.x, st.z) : cam.yaw;
+  b.arrival = { t0: performance.now() / 1000, a };
+}
+const ARR = { swim: 5, leap: 0.8, up: 1.4, hop: 1.25, wave: 2.5 };
+function arrivalState(b, st) {
+  const A = b.arrival, e = performance.now() / 1000 - A.t0, dir = { x: Math.sin(A.a), z: Math.cos(A.a) };
+  const shore = ISLAND_R * 0.93, sea = ISLAND_R + 1.4, inward = A.a + Math.PI;
+  const at = (r) => ({ x: dir.x * r, z: dir.z * r });
+  const o = { ...st, y: 0, pitch: 0, wet: false, moving: false, sliding: false, pose: 'stand', act: 'arrive', friend: null, heading: inward };
+  let x = e;
+  if (x < ARR.swim) {
+    const f = x / ARR.swim, ph = x * 2.4, u = Math.sin(ph), out = u > 0.35 ? (u - 0.35) / 0.65 : 0;
+    return { ...o, ...at(sea + (1 - f) * 7), y: -0.3 + out * 0.55, pitch: -Math.cos(ph) * (out ? 0.6 : 0.12), wet: true, moving: true, anim: ['Slide', SLIDE_DOWN + (x % SLIDE_HOLD)] };
+  }
+  x -= ARR.swim;
+  if (x < ARR.leap) {
+    const f = x / ARR.leap;
+    return { ...o, ...at(sea + (shore - sea) * f), y: -0.3 * (1 - f) + Math.sin(Math.PI * f) * 0.7, pitch: -0.9 + f * 0.9, wet: true, anim: ['Slide', SLIDE_DOWN] };
+  }
+  x -= ARR.leap;
+  if (x < ARR.up) return { ...o, ...at(shore), anim: ['Slide', SLIDE_UP + x] };
+  x -= ARR.up;
+  if (x < ARR.hop) return { ...o, ...at(shore), anim: ['Hop', x] };
+  x -= ARR.hop;
+  const toCam = Math.atan2(camera.position.x - dir.x * shore, camera.position.z - dir.z * shore);
+  if (x < ARR.wave) return { ...o, ...at(shore), heading: toCam, anim: ['Wave', x] };
+  x -= ARR.wave;
+  // walk to wherever the colony's clock says it should be, then hand over
+  const from = at(shore), dist = Math.hypot(st.x - from.x, st.z - from.z);
+  A.walk ??= Math.max(1.5, Math.min(14, dist / 0.6));
+  if (x >= A.walk || st.wet) { b.arrival = null; return st; }
+  const f = x / A.walk, k = f * f * (3 - 2 * f);
+  return { ...o, x: from.x + (st.x - from.x) * k, z: from.z + (st.z - from.z) * k, heading: Math.atan2(st.x - from.x, st.z - from.z), moving: true, act: 'going', anim: ['Walk', x * 1.2, true] };
 }
 
 function setFollow(b) {
@@ -306,6 +435,7 @@ function select(b) {
   const partner = p.partner && colony.bySerial.get(p.partner);
   $('#pcMeta').textContent = [p.serial, coll, partner ? t('world.partner', { name: partner.name }) : null].filter(Boolean).join(' · ');
   $('#pcCert').href = `p.html#${p.serial}`;
+  $('#pcCert').hidden = !!p.rehearsal;
   $('#followBtn').textContent = t(follow === b ? 'world.following' : 'world.follow');
 }
 $('#pcClose').addEventListener('click', () => { select(null); });
@@ -317,7 +447,6 @@ $('#allBtn').addEventListener('click', () => { setFollow(null); cam.goal = { tx:
 // Which clip a penguin plays and at what time. Everything comes from the shared
 // island clock (life.js), so every visitor sees the same frame.
 const CLIP_LEN = { Idle: 2, Walk: 1, Wave: 2.5, Look: 5, Sleep: 4, Lean: 3, Hop: 1.25, Slide: 4 };
-const SLIDE_DOWN = 1.2, SLIDE_HOLD = 1.0, SLIDE_UP = 2.6; // seconds inside the Slide clip
 function loop(name, t) { return [name, ((t % CLIP_LEN[name]) + CLIP_LEN[name]) % CLIP_LEN[name]]; }
 function resting(p, now) {
   const t = now + (p.seed % 97);
@@ -327,13 +456,15 @@ function resting(p, now) {
 }
 function choreo(p, st, now) {
   if (REDUCED) return ['Idle', 0];
+  if (st.anim) return st.anim[2] ? loop(st.anim[0], st.anim[1]) : [st.anim[0], Math.min(st.anim[1], CLIP_LEN[st.anim[0]] - 0.01)]; // set by the colony's day
   if (st.pose === 'lie') return loop('Sleep', now + (p.seed % 61)); // sunbathing on the reclining rig
   if (st.sliding) {                                         // lie down, then glide on the belly
     const e = st.elapsed;
     return ['Slide', e < SLIDE_DOWN ? e : SLIDE_DOWN + ((e - SLIDE_DOWN) % SLIDE_HOLD)];
   }
   if (st.moving) return loop('Walk', now * 1.15 * st.speed + (p.seed % 13) * 0.1);
-  const since = st.elapsed - st.travel;                     // seconds since arriving
+  const since = st.sync ?? st.elapsed - st.travel;          // seconds since arriving (on a date: since both arrived)
+  if (since < 0) return loop('Look', now + (p.seed % 89));  // waiting for the other one
   if (st.kind === 'slide' && since < CLIP_LEN.Slide - SLIDE_UP) return ['Slide', SLIDE_UP + since]; // getting up
   if (st.act === 'visit' && st.friend) {
     if (since < CLIP_LEN.Wave) return ['Wave', since];      // hello on arrival
@@ -347,8 +478,12 @@ function choreo(p, st, now) {
 }
 // fade between clips so changes never pop
 // The same clip names exist on both rigs: standing (Walk = waddle) and Summer (Walk = belly crawl).
-function animate(b, r, dt) {
-  const want = choreo(b.p, b.state, Date.now() / 1000);
+function animate(b, r, dt, now) {
+  let want = choreo(b.p, b.state, now);
+  if (b.react) {                                            // answering this visitor's touch
+    const e = performance.now() / 1000 - b.react.t0, st = b.state;
+    if (e < CLIP_LEN[b.react.clip] && !st.moving && !st.sliding && !st.wet) want = [b.react.clip, e];
+  }
   const k = 1 - Math.exp(-7 * dt);
   for (const [name, a] of Object.entries(r.actions)) {
     const on = want && want[0] === name;
@@ -390,23 +525,30 @@ const v = new THREE.Vector3();
 function frame() {
   requestAnimationFrame(frame);
   const dt = Math.min(clock.getDelta(), 0.1);
-  const now = Date.now() / 1000;            // shared island time
+  const now = islandNow();                  // shared island time
   const ease = (k) => 1 - Math.exp(-k * dt);
 
+  applyDaylight(now);
   if (colony) {
     for (const b of birds) {
-      const st = colony.state(b.p, now);
+      let st = colony.state(b.p, now);
+      if (b.arrival) st = arrivalState(b, st);
       b.state = st;
-      b.g.position.set(st.x, 0, st.z);
-      // turn smoothly toward the heading (shortest way round)
-      let d = st.heading - b.heading;
+      b.g.position.set(st.x, st.y || 0, st.z);
+      b.body.rotation.x = st.pitch || 0;        // nose up or down while diving and leaping
+      b.sh.visible = !st.wet;
+      if (b.ring) b.ring.visible = !st.wet;
+      // turn smoothly toward the heading (shortest way round); a touched penguin turns to the visitor
+      const reacting = b.react && performance.now() / 1000 - b.react.t0 < CLIP_LEN[b.react.clip] && !st.moving && !st.wet;
+      const goal = reacting ? Math.atan2(camera.position.x - st.x, camera.position.z - st.z) : st.heading;
+      let d = goal - b.heading;
       d = Math.atan2(Math.sin(d), Math.cos(d));
-      b.heading += d * ease(st.moving ? 6 : 2.5);
+      b.heading += d * ease(st.wet ? 12 : st.moving || reacting ? 6 : 2.5);
       b.g.rotation.y = b.heading;
       const reclined = b.summer || st.pose === 'lie';
       if (b.stand) b.stand.mesh.visible = !reclined;
       b.rest.mesh.visible = reclined;
-      animate(b, reclined ? b.rest : b.stand, dt);   // waddle, crawl, slide and gestures live in the rigs' clips
+      animate(b, reclined ? b.rest : b.stand, dt, now);   // waddle, crawl, slide and gestures live in the rigs' clips
     }
     // love hearts between partners spending time together
     for (const b of birds) {
@@ -437,8 +579,8 @@ function frame() {
   if (colony) {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     for (const b of birds) {
-      const low = b.summer || b.state.pose === 'lie' || b.state.sliding;
-      v.set(b.g.position.x, H * b.sizeK * (low ? 0.75 : 1.2), b.g.position.z).project(camera);
+      const low = b.summer || b.state.pose === 'lie' || b.state.sliding || b.state.wet;
+      v.set(b.g.position.x, b.g.position.y + H * b.sizeK * (low ? 0.75 : 1.2), b.g.position.z).project(camera);
       const near = camera.position.distanceTo(b.g.position) < 12;
       const vis = v.z < 1 && (near || b === mine || b === selected);
       b.tag.classList.toggle('dim', !vis);

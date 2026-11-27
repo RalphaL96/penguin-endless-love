@@ -92,6 +92,13 @@ export const ECO = {
     'act.visit': 'Con {name}',
     'act.slide': 'Deslizándose sobre el hielo',
     'act.going': 'Caminando',
+    'act.huddle': 'Abrigándose con la colonia',
+    'act.file': 'En fila hacia el mar',
+    'act.shore': 'Dudando en la orilla',
+    'act.swim': 'Nadando alrededor de la isla',
+    'act.ashore': 'Recién salido del agua',
+    'act.arrive': 'Llegando a la isla',
+    'world.rehearsal': 'ensayo',
   },
   en: {
     'bap.kicker': 'Authentic heart',
@@ -185,6 +192,13 @@ export const ECO = {
     'act.visit': 'With {name}',
     'act.slide': 'Sliding across the ice',
     'act.going': 'Walking',
+    'act.huddle': 'Huddling with the colony',
+    'act.file': 'In line to the sea',
+    'act.shore': 'Hesitating on the shore',
+    'act.swim': 'Swimming around the island',
+    'act.ashore': 'Just out of the water',
+    'act.arrive': 'Arriving on the island',
+    'world.rehearsal': 'rehearsal',
   },
 };
 
