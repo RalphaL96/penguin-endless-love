@@ -27,7 +27,8 @@ const ASM = 40;                       // seconds to line up
 const FILE_V = 0.55;                  // marching speed
 const DIVE = 0.9, LAP = 44, LEAP = 0.8, GETUP = 1.4, HOP = 1.25;
 const SWIM_R = ISLAND_R + 1.4;        // where they enter and leave the water
-const WATER_Y = -0.3;
+export const SEA_Y = -0.35;           // the surface of the sea
+const DEEP = -1.0;                    // they swim under the surface and only break it to leap
 // seconds inside the Slide clip (lie down / glide / get up); the swim reuses its belly pose
 export const SLIDE_DOWN = 1.2, SLIDE_HOLD = 1.0, SLIDE_UP = 2.6;
 
@@ -339,7 +340,7 @@ export class Colony {
       const f = x / DIVE;
       return {
         ...base, x: m.shore.x + (m.water.x - m.shore.x) * f, z: m.shore.z + (m.water.z - m.shore.z) * f,
-        y: WATER_Y * f + Math.sin(Math.PI * f) * 0.45, pitch: -0.35 + f * 1.0, wet: true, heading: m.ang,
+        y: DEEP * f * f + Math.sin(Math.PI * f) * 0.45, pitch: -0.35 + f * 1.25, wet: true, heading: m.ang,
         act: 'swim', anim: ['Slide', f * SLIDE_DOWN],
       };
     }
@@ -348,11 +349,12 @@ export class Colony {
     if (x < LAP) {                                             // a lap around the island, leaping like a dolphin
       const a = m.ang + trip.sign * Math.PI * 2 * (x / LAP);
       const at = polar(SWIM_R + 1.7 * smooth(0, 3, x) * (1 - smooth(LAP - 3, LAP, x)), a);
-      const ph = x * 2.2 + (p.seed % 7), u = Math.sin(ph), out = u > 0.35 ? (u - 0.35) / 0.65 : 0;
+      // under the surface most of the time; every few seconds a leap clear of the water
+      const ph = x * 1.25 + (p.seed % 7), u = Math.sin(ph), out = smooth(0.45, 1, u);
       const calm = smooth(0, 1.5, x) * (1 - smooth(LAP - 1.5, LAP, x));
       return {
-        ...base, x: at.x, z: at.z, y: WATER_Y + (out * 0.55 + (out ? 0 : Math.sin(ph * 3) * 0.02)) * calm,
-        pitch: -Math.cos(ph) * (out ? 0.6 : 0.12) * calm, wet: true, moving: true, heading: a + trip.sign * Math.PI / 2,
+        ...base, x: at.x, z: at.z, y: DEEP + (out * 1.3 + Math.sin(ph * 2.3) * 0.06) * calm,
+        pitch: -Math.cos(ph) * (0.15 + 0.65 * smooth(0.2, 0.7, u)) * calm, wet: true, moving: true, heading: a + trip.sign * Math.PI / 2,
         act: 'swim', anim: glide,
       };
     }
@@ -361,7 +363,7 @@ export class Colony {
       const f = x / LEAP;
       return {
         ...base, x: m.water.x + (m.shore.x - m.water.x) * f, z: m.water.z + (m.shore.z - m.water.z) * f,
-        y: WATER_Y * (1 - f) + Math.sin(Math.PI * f) * 0.7, pitch: -0.9 + f * 0.9, wet: true, heading: m.ang + Math.PI,
+        y: DEEP * (1 - f) * (1 - f) + Math.sin(Math.PI * f) * 0.6, pitch: -1.0 + f * 1.0, wet: true, heading: m.ang + Math.PI,
         act: 'ashore', anim: glide,
       };
     }

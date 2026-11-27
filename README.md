@@ -27,3 +27,6 @@ La isla vive un día cada tres horas (`DAY` en `life.js`), igual para todos los 
 - Tocar un pingüino: gira hacia el visitante y saluda; al segundo toque, salta. Solo lo ve quien toca.
 
 Ensayo, solo para quien abre el enlace (no guarda nada): `mundo.html?ensayo=12` añade pingüinos de muestra, `&minuto=149` empieza en ese minuto del día (0 a 180), `&ritmo=8` acelera el tiempo.
+
+### El mar (27/11/2026)
+Un solo material ligero en `world.js`, sin pasadas extra de render (no usa `Water.js` ni `Water2.js`, que redibujan la escena para el reflejo): olas por vértices, facetas como el hielo, agua translúcida cerca de la isla, línea de espuma en la orilla y anillos de espuma donde un pingüino rompe la superficie. Los pingüinos nadan bajo el agua y solo salen para saltar.

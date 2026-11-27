@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { FINISHES, ENVS, buildEnvironment, loadModel, loadRig, contactShadowTexture } from './stage.js';
-import { Colony, ISLAND_R, DAY, SLIDE_DOWN, SLIDE_HOLD, SLIDE_UP, rand, daylight } from './life.js';
+import { Colony, ISLAND_R, DAY, SEA_Y, SLIDE_DOWN, SLIDE_HOLD, SLIDE_UP, rand, daylight } from './life.js';
 import { listPenguins } from './registry.js';
 import { STRINGS } from './i18n.js';
 import { ECO } from './i18n-eco.js';
@@ -144,11 +144,11 @@ scene.add(top.mesh);
   const rim = top.rim, seg = rim.length / 3, verts = [], idx = [];
   for (let s = 0; s < seg; s++) {
     const x = rim[s * 3], z = rim[s * 3 + 2];
-    verts.push(x, 0, z, x * 1.07, -0.9, z * 1.07);
+    verts.push(x, 0, z, x * 1.07, -0.9, z * 1.07, x * 1.16, -3, z * 1.16); // down past the waterline to the seabed
   }
   for (let s = 0; s < seg; s++) {
-    const a = s * 2, b = ((s + 1) % seg) * 2;
-    idx.push(a, a + 1, b, b, a + 1, b + 1);
+    const a = s * 3, b = ((s + 1) % seg) * 3;
+    idx.push(a, a + 1, b, b, a + 1, b + 1, a + 1, a + 2, b + 1, b + 1, a + 2, b + 2);
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
@@ -174,14 +174,76 @@ for (let i = 0; i < 3; i++) {
   scene.add(m);
 }
 // sea
-const waterMat = new THREE.MeshStandardMaterial({ color: 0x1e3140, roughness: 0.18, metalness: 0.3 });
-const water = new THREE.Mesh(new THREE.CircleGeometry(160, 64), waterMat);
-water.rotation.x = -Math.PI / 2;
-water.position.y = -0.35;
-scene.add(water);
+// One light material, no extra render passes: a few travelling waves move the vertices, the facets
+// catch the sky like the ice does, the water is see-through near the island (a swimming penguin shows
+// as a shape under the surface) and a line of foam breathes against the shore.
+const WAVES_R = 30;                                     // waves and transparency fade out by this radius
+const seaTime = { value: 0 };
+const waterMat = new THREE.MeshStandardMaterial({ color: 0x1e3140, roughness: 0.16, metalness: 0.3, flatShading: true, transparent: true });
+waterMat.onBeforeCompile = (sh) => {
+  sh.uniforms.uTime = seaTime;
+  sh.vertexShader = sh.vertexShader
+    .replace('#include <common>', `#include <common>
+      uniform float uTime; varying vec2 vSea;`)
+    .replace('#include <begin_vertex>', `#include <begin_vertex>
+      vSea = position.xy;
+      float calm = 1.0 - smoothstep(${(WAVES_R * 0.55).toFixed(1)}, ${WAVES_R.toFixed(1)}, length(position.xy));
+      transformed.z += calm * (0.055 * sin(dot(position.xy, vec2(0.62, 0.48)) + uTime * 1.1)
+        + 0.035 * sin(dot(position.xy, vec2(-0.9, 1.3)) - uTime * 1.5)
+        + 0.018 * sin(dot(position.xy, vec2(2.3, -1.9)) + uTime * 2.2));`);
+  sh.fragmentShader = sh.fragmentShader
+    .replace('#include <common>', `#include <common>
+      uniform float uTime; varying vec2 vSea;`)
+    .replace('#include <color_fragment>', `#include <color_fragment>
+      float r = length(vSea), ang = atan(vSea.x, vSea.y);
+      float edge = ${(ISLAND_R * 1.14).toFixed(2)} + 0.18 * sin(ang * 7.0 + uTime * 0.7) + 0.1 * sin(ang * 17.0 - uTime * 1.1) + 0.14 * sin(uTime * 0.9);
+      float foam = (1.0 - smoothstep(edge - 0.05, edge + 0.3, r)) * 0.38;
+      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.82, 0.9, 0.95), foam);
+      diffuseColor.a = max(foam, mix(0.8, 1.0, smoothstep(${(ISLAND_R + 4).toFixed(1)}, ${WAVES_R.toFixed(1)}, r)));`);
+};
+for (const geo of [new THREE.RingGeometry(0.01, WAVES_R, 96, 44), new THREE.RingGeometry(WAVES_R, 160, 96, 1)]) {
+  const m = new THREE.Mesh(geo, waterMat);
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = SEA_Y;
+  m.renderOrder = 1;
+  scene.add(m);
+}
+const bedMat = new THREE.MeshBasicMaterial({ color: 0x0c1c29 });
+{
+  const bed = new THREE.Mesh(new THREE.CircleGeometry(WAVES_R + 2, 48), bedMat);
+  bed.rotation.x = -Math.PI / 2;
+  bed.position.y = -3;
+  scene.add(bed);
+}
+// rings of foam where a penguin breaks the surface, going in or coming out
+const splashes = [];
+for (let i = 0; i < 14; i++) {
+  const m = new THREE.Mesh(new THREE.RingGeometry(0.86, 1, 28), new THREE.MeshBasicMaterial({ color: 0xe6f1f7, transparent: true, opacity: 0, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = SEA_Y + 0.07;
+  m.renderOrder = 2;
+  m.visible = false;
+  scene.add(m);
+  splashes.push({ m, t0: -10 });
+}
+let splashNext = 0;
+function splash(x, z) {
+  const s = splashes[splashNext++ % splashes.length];
+  s.m.position.x = x; s.m.position.z = z; s.t0 = performance.now() / 1000;
+}
+function updateSplashes(light) {
+  const t = performance.now() / 1000;
+  for (const s of splashes) {
+    const f = (t - s.t0) / 1.1;
+    s.m.visible = f < 1;
+    if (f >= 1) continue;
+    s.m.scale.setScalar(0.2 + f * 0.75);
+    s.m.material.opacity = (1 - f) * (1 - f) * (0.25 + 0.5 * light);
+  }
+}
 
 // ---------- day and night ----------
-const SUN_DAY = new THREE.Color(0xffdcb0), SUN_LOW = new THREE.Color(0xff9a5a), WATER_DAY = new THREE.Color(0x1e3140), WATER_NIGHT = new THREE.Color(0x070d15);
+const SUN_DAY = new THREE.Color(0xffdcb0), SUN_LOW = new THREE.Color(0xff9a5a), WATER_DAY = new THREE.Color(0x1e3140), WATER_NIGHT = new THREE.Color(0x070d15), BED_DAY = new THREE.Color(0x0c1c29), BED_NIGHT = new THREE.Color(0x02060a);
 let litAt = -1;
 function applyDaylight(now) {
   const { light, warm } = daylight(now);
@@ -195,6 +257,7 @@ function applyDaylight(now) {
   hemi.intensity = 0.14 + 0.21 * light;
   starMat.opacity = (1 - light) ** 2 * 0.9;
   waterMat.color.copy(WATER_NIGHT).lerp(WATER_DAY, light);
+  bedMat.color.copy(BED_NIGHT).lerp(BED_DAY, light);
   renderer.toneMappingExposure = 0.5 + 0.42 * light;
   const env = 0.3 + 0.7 * light;                       // reflections dim with the sky
   for (const m of [iceMat, cliffMat, waterMat, heartMat, ...finishMats.values()]) m.envMapIntensity = env;
@@ -392,13 +455,13 @@ function arrivalState(b, st) {
   const o = { ...st, y: 0, pitch: 0, wet: false, moving: false, sliding: false, pose: 'stand', act: 'arrive', friend: null, heading: inward };
   let x = e;
   if (x < ARR.swim) {
-    const f = x / ARR.swim, ph = x * 2.4, u = Math.sin(ph), out = u > 0.35 ? (u - 0.35) / 0.65 : 0;
-    return { ...o, ...at(sea + (1 - f) * 7), y: -0.3 + out * 0.55, pitch: -Math.cos(ph) * (out ? 0.6 : 0.12), wet: true, moving: true, anim: ['Slide', SLIDE_DOWN + (x % SLIDE_HOLD)] };
+    const f = x / ARR.swim, ph = x * 1.9 - 0.6, u = Math.sin(ph), out = u > 0.45 ? ((u - 0.45) / 0.55) ** 2 * (3 - 2 * (u - 0.45) / 0.55) : 0;
+    return { ...o, ...at(sea + (1 - f) * 7), y: -1 + out * 1.3 * (1 - f * f), pitch: -Math.cos(ph) * (0.15 + 0.65 * Math.max(0, u)), wet: true, moving: true, anim: ['Slide', SLIDE_DOWN + (x % SLIDE_HOLD)] };
   }
   x -= ARR.swim;
   if (x < ARR.leap) {
     const f = x / ARR.leap;
-    return { ...o, ...at(sea + (shore - sea) * f), y: -0.3 * (1 - f) + Math.sin(Math.PI * f) * 0.7, pitch: -0.9 + f * 0.9, wet: true, anim: ['Slide', SLIDE_DOWN] };
+    return { ...o, ...at(sea + (shore - sea) * f), y: -1 * (1 - f) * (1 - f) + Math.sin(Math.PI * f) * 0.6, pitch: -1.0 + f * 1.0, wet: true, anim: ['Slide', SLIDE_DOWN] };
   }
   x -= ARR.leap;
   if (x < ARR.up) return { ...o, ...at(shore), anim: ['Slide', SLIDE_UP + x] };
@@ -529,6 +592,8 @@ function frame() {
   const ease = (k) => 1 - Math.exp(-k * dt);
 
   applyDaylight(now);
+  seaTime.value = (performance.now() / 1000) % 3600;
+  updateSplashes(daylight(now).light);
   if (colony) {
     for (const b of birds) {
       let st = colony.state(b.p, now);
@@ -538,6 +603,9 @@ function frame() {
       b.body.rotation.x = st.pitch || 0;        // nose up or down while diving and leaping
       b.sh.visible = !st.wet;
       if (b.ring) b.ring.visible = !st.wet;
+      const under = st.wet && (st.y || 0) < SEA_Y - 0.2; // crossing the surface leaves a ring of foam
+      if (b.under !== undefined && under !== b.under) splash(st.x, st.z);
+      b.under = under;
       // turn smoothly toward the heading (shortest way round); a touched penguin turns to the visitor
       const reacting = b.react && performance.now() / 1000 - b.react.t0 < CLIP_LEN[b.react.clip] && !st.moving && !st.wet;
       const goal = reacting ? Math.atan2(camera.position.x - st.x, camera.position.z - st.z) : st.heading;
